@@ -8,9 +8,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class Host {
-    public static void main(String[] args) throws IOException {
+    protected BlockingQueue queue = null;
+
+    public void main(String[] args) throws IOException {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
         ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
@@ -100,7 +104,10 @@ public class Host {
         if (timeFile.exists() && dictFile.exists() && logFile.exists()) {
             mySite.recover(siteNum);
         }
-
+//==================================================================================================
+        // Blocking Queue
+        BlockingQueue queue = new ArrayBlockingQueue(1024);
+        this.queue = queue;
 //==================================================================================================
         //TODO: UDP Transportation
         // Start port is for listening
@@ -108,14 +115,14 @@ public class Host {
         // Create receive socket by start port number
         Integer receivePort = Integer.parseInt(curStartPort);
         DatagramSocket receiveSocket = new DatagramSocket(receivePort);
-        new Listener(receiveSocket, sitesInfo, mySite).start();// child thread go here
-
-
         // Create send socket by end port number
         DatagramSocket sendSocket = new DatagramSocket(Integer.parseInt(curEndPort));
 
+        new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, mySite).start();// child thread go here
+
+
 //==================================================================================================
-        //TODO: UI
+        // TODO: UI
         // main thread keeps receiving msgs from user at this site
         while (true) {
             System.out.println("[test]Please enter the command: ");
