@@ -1,23 +1,31 @@
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Reservation implements Serializable {
-    private static final long serialVersionUID = 420752690109126838L;
+public class Reservation {
+    private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
-    private String status;
+    private String flattenString;
 
-    // TODO: change form into: operation clientName FlightNumber
     // CONSTRUCTOR
-    Reservation(String clientName, String status, ArrayList<Integer> flights) {
+    Reservation(String operation, String clientName, String flights) {
+        this.operation = operation;
         this.clientName = clientName;
-        this.status = status;
-        this.flights = flights;
+        this.flights = new ArrayList<>();
+        String[] fNumber = flights.split(",");
+        for (int i = 0; i < fNumber.length; i++) {
+            this.flights.add(Integer.parseInt(fNumber[i]));
+        }
+        this.flattenString = operation  + " " + clientName + " " + flights;
     }
 
     // GETTERS and SETTERS
+    public String getOperation() {
+        return this.operation;
+    }
+
     public String getClientName() {
-        return clientName;
+        return this.clientName;
     }
 
     public void setClientName(String clientName) {
@@ -25,51 +33,14 @@ public class Reservation implements Serializable {
     }
 
     public ArrayList<Integer> getFlights() {
-        return flights;
+        return this.flights;
     }
 
     public void setFlights(ArrayList<Integer> flights) {
         this.flights = flights;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-
-    // HELPERS
-    /**
-     * flatten object into the format of: "clientName flightsNumber status"
-     */
     public String flatten() {
-        StringBuilder builder = new StringBuilder();
-        // clientName
-        builder.append(this.clientName);
-        builder.append(" ");
-        // flights
-        for (int i = 0; i < this.flights.size(); i++) {
-            builder.append(this.flights.get(i));
-            if (i < this.flights.size() - 1) builder.append(",");
-        }
-        builder.append(" ");
-        // status
-        builder.append(this.status);
-        builder.append(" ");
-
-        return builder.toString();
-    }
-
-    public String printFlight() {
-        if (this.flights.isEmpty()) return "";
-        StringBuilder res = new StringBuilder();
-        for (int i = 0; i < this.flights.size(); i++) {
-            if (i != this.flights.size() - 1) res.append(this.flights.get(i)).append(",");
-            else res.append(this.flights.get(i));
-        }
-        return res.toString();
+        return this.flattenString;
     }
 }
