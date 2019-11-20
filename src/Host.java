@@ -152,22 +152,6 @@ public class Host {
 
     //==================================================================================================
     //TODO: Helper function
-    public static CommunicateInfo buildMsg(ReservationSys mySite, ArrayList<String> recipients, ArrayList<HashMap<String, String>> sitesInfo) {
-        // Identify the the necessary partial log for sending to all other sites
-        ArrayList<EventRecord> recordsToSend = new ArrayList<>();
-        for (int j = 0; j < recipients.size(); j++) {
-            for (int i = 0; i < mySite.getLog().size(); i++) {
-                EventRecord curRecord = mySite.getLog().get(i);
-                if (!mySite.hasRec(curRecord, recipients.get(j)) && !recordsToSend.contains(curRecord)) {
-                    recordsToSend.add(curRecord);
-                }
-            }
-        }
-
-        CommunicateInfo res = new CommunicateInfo(recordsToSend, mySite.getTimeTable(), new Integer[]{}, false);
-        return res;
-    }
-
     // Serialize the CommunicateInfo to byte array
     public static byte[] serialize(Object obj) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
