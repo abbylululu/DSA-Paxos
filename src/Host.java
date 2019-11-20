@@ -12,9 +12,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class Host {
-    protected BlockingQueue queue = null;
-
-    public void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
         ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
@@ -107,7 +105,6 @@ public class Host {
 //==================================================================================================
         // Blocking Queue
         BlockingQueue queue = new ArrayBlockingQueue(1024);
-        this.queue = queue;
 //==================================================================================================
         //TODO: UDP Transportation
         // Start port is for listening
