@@ -21,7 +21,9 @@ public class Proposer {
     private HashMap<String, Pair<Integer, String>> promise_queues;
     // slot -> slot_queue(siteIp -> reservation(string form))
     private HashMap<String, String> ack_queues;
-    private ArrayList<Integer> committed_slots;
+//    private ArrayList<Integer> committed_slots;
+    // slot -> accVal
+    private HashMap<Integer, String> learnt_slots;
 
     public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket) {
         this.uid = uid;
@@ -35,7 +37,8 @@ public class Proposer {
         this.my_proposals = new HashMap<>();
         this.promise_queues = new HashMap<>();
         this.ack_queues = new HashMap<>();
-        this.committed_slots = new ArrayList<>();
+//        this.committed_slots = new ArrayList<>();
+        this.learnt_slots = new HashMap<>();
     }
 
 //    public Proposer(int next_log_slot, String reservation, int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket) {
@@ -119,6 +122,44 @@ public class Proposer {
         this.ack_queues.put(curSiteIp, this.reservation);
     }
 
+    // message form: commit accVal logSlot senderIP
+    public void sendCommit(String accVal) {
+        // build the commit message
+        StringBuilder sb = new StringBuilder();
+        sb.append("commit ");
+        sb.append(accVal);
+        sb.append(" ");
+        sb.append(this.next_log_slot);
+        sb.append(" ");
+        sb.append(this.sitesInfo.get(uid).get("ip"));
+
+        // send commit to all sites except self
+        for (int i = 0; i < this.sitesInfo.size(); i++) {
+            if (i == this.uid) continue;
+            String recvIp = this.sitesInfo.get(i).get("ip");
+            Send commit = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
+            commit.start();
+        }
+    }
+
+    // message form: commit accVal logSlot senderIP
+    public void recvCommit(String message) {
+        // parse the received message
+        String[] splitted = message.split(" ");
+        int logSlot = Integer.parseInt(splitted[2]);
+        String accVal = splitted[1];
+        this.learnt_slots.put(logSlot, accVal);
+    }
+
+    public HashMap<Integer, Reservation> learn(HashMap<Integer, Reservation> curLog) {
+        for (Map.Entry<Integer, String> mapElement: this.learnt_slots.entrySet()) {
+            int curSlot = mapElement.getKey();
+            String curResv = mapElement.getValue();
+            curLog.put(curSlot, new Reservation(curResv));
+        }
+        return curLog;
+    }
+
     // after user input: reserve or cancel, start to propose a log slot
     // return: 1: successful propose 0: unsuccessful propose
     public int propose() {
@@ -164,6 +205,10 @@ public class Proposer {
                     // FIXME: what if my own reservation is dumped?
                 }
             }
+            // when receiving commit for other slots
+            else if (splitted[0].equals("commit")) {
+                recvCommit(curMsg);
+            }
             // if timeout, return 0 to main and retry
             if (success == 0) return 0;
         }
@@ -187,10 +232,20 @@ public class Proposer {
                     success = 1;
                 }
             }
+            // when receiving commit for other slots
+            else if (splitted[0].equals("commit")) {
+                recvCommit(curMsg);
+            }
         }
         // if timeout, return 0 to main and retry
         if (success == 0) return 0;
-        else return 1;
+        // successfully proposed, learn the chosen slot
+        this.learnt_slots.put(this.next_log_slot, maxVal);
+
+        // 5. change role to learner, send commit
+        sendCommit(maxVal);
+
+        return 1;
     }
 
     public int getUid() {
@@ -281,11 +336,11 @@ public class Proposer {
         this.ack_queues = ack_queues;
     }
 
-    public ArrayList<Integer> getCommitted_slots() {
-        return committed_slots;
-    }
-
-    public void setCommitted_slots(ArrayList<Integer> committed_slots) {
-        this.committed_slots = committed_slots;
-    }
+//    public ArrayList<Integer> getCommitted_slots() {
+//        return committed_slots;
+//    }
+//
+//    public void setCommitted_slots(ArrayList<Integer> committed_slots) {
+//        this.committed_slots = committed_slots;
+//    }
 }

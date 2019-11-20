@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
@@ -19,6 +22,22 @@ public class ReservationSys {
         this.dictionary = new ArrayList<>();
         this.log = new HashMap<>();
         this.proposer = new Proposer(uid, this.sitesInfo, sendSocket);
+    }
+
+    public void store() {
+        // logSlot accVal senderIp
+        for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+            // empty log slot
+            if (mapElement.getValue() == null) continue;
+            String log = mapElement.getValue().flatten();
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter("Log.txt"));
+                writer.write(log);
+                writer.close();
+            } catch (IOException e) {
+                System.out.println("write exception");
+            }
+        }
     }
 
     public boolean isConflict(ArrayList<Integer> flights) {
@@ -79,8 +98,17 @@ public class ReservationSys {
             cnt--;
         }
         // successfully proposed
-        // TODO: need to call learner
         if (cnt > 0) {
+            // update log entry
+            this.log = this.proposer.learn(this.log);
+            this.store();
+            // update local dict
+            for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+                if (mapElement.getValue() == null) continue;
+                Reservation curResv = mapElement.getValue();
+                if (this.dictionary.contains(curResv)) continue;
+                this.dictionary.add(curResv);
+            }
             return 1;
         }
         else {
@@ -127,8 +155,18 @@ public class ReservationSys {
             cnt--;
         }
         // successfully proposed
-        // TODO: need to call learner
         if (cnt > 0) {
+            // update log entry
+            this.log = this.proposer.learn(this.log);
+            this.store();
+            // update local dict
+            ArrayList<Reservation> newDict = new ArrayList<>();
+            for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+                if (mapElement.getValue() == null) continue;
+                Reservation curResv = mapElement.getValue();
+                newDict.add(curResv);
+            }
+            this.dictionary = newDict;
             return 1;
         }
         else {

@@ -143,10 +143,10 @@ public class Host {
                 }
 
             } else if (input[0].equals("view")) {// Print dictionary here
-                mySite.printDictionary();
+//                mySite.printDictionary();
 
             } else if (input[0].equals("log")) {// Print log here
-                mySite.printLog();
+//                mySite.printLog();
 
             } else if (input[0].equals("quit")) {
                 System.exit(0);
