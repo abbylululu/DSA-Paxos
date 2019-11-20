@@ -215,6 +215,8 @@ public class Acceptor extends Thread {
         this.sendSocket.send(sendPacket);
     }
 
+
+    // Change to stable storage
     public void recordLog(Integer logSlot) {
         Record log = new Record(logSlot, this.maxPrepare.get(logSlot), this.accNum.get(logSlot), this.accVal.get(logSlot));
         if (this.acceptorLog.containsKey(logSlot)) {
