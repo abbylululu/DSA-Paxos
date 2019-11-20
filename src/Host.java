@@ -79,21 +79,19 @@ public class Host {
         curIp = inetAddress.getHostAddress();
 
         // FIXME: need to change back to ip
+        int uid = 0; // site index as unique identifier
         for (int i = 0; i < sitesInfo.size(); i++) {
             if (sitesInfo.get(i).get("siteId").equals(id)) {
                 HashMap<String, String> curMap = sitesInfo.get(i);
                 curSiteId = curMap.get("siteId");
                 curStartPort = curMap.get("startPort");
                 curEndPort = curMap.get("endPort");
+                uid = i;
             }
         }
 
 
 //==================================================================================================
-        //TODO: Start from here
-        // Construct current site(work as proposer, acceptor, learner simultaneously)
-        ReservationSys mySite = new ReservationSys(sitesInfo, siteNum, curSiteId);
-
         // FIXME: separate directory and project structure
         // Restore when site crashes
         File timeFile = new File("timeTable.txt");
@@ -115,9 +113,12 @@ public class Host {
         // Create send socket by end port number
         DatagramSocket sendSocket = new DatagramSocket(Integer.parseInt(curEndPort));
 
+        //TODO: Start from here
+        // Construct current site(work as proposer, acceptor, learner simultaneously)
+        ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket);
+
         new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, mySite).start();// child thread go here
-
-
+        
 //==================================================================================================
         // TODO: UI
         // main thread keeps receiving msgs from user at this site
@@ -128,11 +129,17 @@ public class Host {
             String[] input = commandLine.split("\\s+");
 
             if (input[0].equals("reserve")) {// insert into my site, update timetable, log and dictionary
-                mySite.insert(input);
+                // TODO: how to handle conflicted reserve?
+                if (mySite.insert(input) == 0) {
+                    // TODO: notify user, time out and not adding
+                }
 
             } else if (input[0].equals("cancel")) {// delete from my site's dictionary, update log and timetable
-                if (!mySite.delete(input)) {
+                if (mySite.delete(input) == -1) {
                     System.out.println("Cancel Error");
+                }
+                else if (mySite.delete(input) == 0) {
+                    // TODO: notify user, time out and not adding
                 }
 
             } else if (input[0].equals("view")) {// Print dictionary here

@@ -1,22 +1,29 @@
-import java.io.Serializable;
+import java.lang.String;
 import java.util.ArrayList;
 
 public class Reservation {
     private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
-    private String flattenString;
 
     // CONSTRUCTOR
-    Reservation(String operation, String clientName, String flights) {
+    Reservation(String operation, String clientName, ArrayList<Integer> flights) {
         this.operation = operation;
         this.clientName = clientName;
-        this.flights = new ArrayList<>();
-        String[] fNumber = flights.split(",");
-        for (int i = 0; i < fNumber.length; i++) {
-            this.flights.add(Integer.parseInt(fNumber[i]));
+        this.flights = flights;
+    }
+
+    // HELPER
+    public String flatten() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.operation);
+        sb.append(" ");
+        sb.append(this.clientName);
+        for (int i = 0; i < this.flights.size(); i++) {
+            sb.append(" ");
+            sb.append(flights.get(i));
         }
-        this.flattenString = operation  + " " + clientName + " " + flights;
+        return sb.toString();
     }
 
     // GETTERS and SETTERS
@@ -38,9 +45,5 @@ public class Reservation {
 
     public void setFlights(ArrayList<Integer> flights) {
         this.flights = flights;
-    }
-
-    public String flatten() {
-        return this.flattenString;
     }
 }
