@@ -3,10 +3,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 
-public class Acceptor extends Thread{
+public class Acceptor extends Thread {
     private HashMap<Integer, Integer> maxPrepare;//log_slot to maxPrepare
     private HashMap<Integer, Integer> accNum;
     private HashMap<Integer, String> accVal;
@@ -15,11 +16,12 @@ public class Acceptor extends Thread{
     private boolean running;
     private byte[] buffer = new byte[65535];
     private ArrayList<HashMap<String, String>> sitesInfo;
-    protected BlockingQueue queue = null;
+    private String siteId;
+    private BlockingQueue queue = null;
     private HashMap<Integer, ArrayList<Record>> acceptorLog;// record every update of logSlot - (maxPrepare accNum accVal)
 
     public Acceptor(BlockingQueue queue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
-                    ArrayList<HashMap<String, String>> sitesInfo, ReservationSys mySite) {
+                    ArrayList<HashMap<String, String>> sitesInfo, String siteId) {
         this.maxPrepare = new HashMap<>();
         this.accNum = new HashMap<>();
         this.accVal = new HashMap<>();
@@ -28,6 +30,8 @@ public class Acceptor extends Thread{
         this.running = true;
         this.sitesInfo = sitesInfo;
         this.queue = queue;
+        this.siteId = siteId;
+        this.acceptorLog = new HashMap<>();
     }
 
     public void run() {
@@ -46,7 +50,7 @@ public class Acceptor extends Thread{
             String senderId = null;
             for (int i = 0; i < this.sitesInfo.size(); i++) {
                 if (this.sitesInfo.get(i).get("ip").equals(senderIp) &&
-                        !this.sitesInfo.get(i).get("siteId").equals(this.mySite.getSiteId())) {
+                        !this.sitesInfo.get(i).get("siteId").equals(this.siteId)) {
                     senderId = this.sitesInfo.get(i).get("siteId");
 //                    System.out.println("[test] Got something from site " + senderId);
                     break;
@@ -123,7 +127,7 @@ public class Acceptor extends Thread{
     }
 
     // Deserialize the byte array and reconstruct the object
-    public static Object deserialize(byte[] buffer) throws IOException, ClassNotFoundException{
+    public static Object deserialize(byte[] buffer) throws IOException, ClassNotFoundException {
         ByteArrayInputStream byteStream = new ByteArrayInputStream(buffer);
         ObjectInputStream objStream = new ObjectInputStream(byteStream);
         return objStream.readObject();
@@ -213,7 +217,14 @@ public class Acceptor extends Thread{
 
     public void recordLog(Integer logSlot) {
         Record log = new Record(logSlot, this.maxPrepare.get(logSlot), this.accNum.get(logSlot), this.accVal.get(logSlot));
-        this.acceptorLog.get(logSlot).add(log);
+        if (this.acceptorLog.containsKey(logSlot)) {
+            this.acceptorLog.get(logSlot).add(log);
+        } else {
+            ArrayList<Record> values = new ArrayList<>();
+            values.add(log);
+            this.acceptorLog.put(logSlot, values);
+        }
+
     }
 
 }
