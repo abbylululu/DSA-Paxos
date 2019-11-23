@@ -18,20 +18,24 @@ public class Acceptor extends Thread {
     private ArrayList<HashMap<String, String>> sitesInfo;
     private String siteId;
     private BlockingQueue queue = null;
-    private HashMap<Integer, ArrayList<Record>> acceptorLog;// record every update of logSlot - (maxPrepare accNum accVal)
+
 
     public Acceptor(BlockingQueue queue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
-                    ArrayList<HashMap<String, String>> sitesInfo, String siteId) {
-        this.maxPrepare = new HashMap<>();
-        this.accNum = new HashMap<>();
-        this.accVal = new HashMap<>();
+                    ArrayList<HashMap<String, String>> sitesInfo, String siteId) throws IOException, ClassNotFoundException {
+        File acceptorFile = new File("acceptor.txt");
+        if (acceptorFile.exists()) {
+            recoverAcceptor();
+        } else {
+            this.maxPrepare = new HashMap<>();
+            this.accNum = new HashMap<>();
+            this.accVal = new HashMap<>();
+        }
         this.receiveSocket = receiveSocket;
         this.sendSocket = sendSocket;
         this.running = true;
         this.sitesInfo = sitesInfo;
         this.queue = queue;
         this.siteId = siteId;
-        this.acceptorLog = new HashMap<>();
     }
 
     public void run() {
@@ -147,7 +151,7 @@ public class Acceptor extends Thread {
     public void recvPrepare(Integer n, String senderIP, Integer logSlot) throws IOException {
         if (n > this.maxPrepare.get(logSlot)) {
             this.maxPrepare.put(logSlot, n);
-            recordLog(logSlot);
+            recordAcceptor();
             sendPromise(senderIP, logSlot);
         } else {
             sendNack(senderIP, logSlot);
@@ -161,7 +165,7 @@ public class Acceptor extends Thread {
             this.accNum.put(logSlot, n);
             this.accVal.put(logSlot, v);
             this.maxPrepare.put(logSlot, n);
-            recordLog(logSlot);
+            recordAcceptor();
             sendAck(senderIP, logSlot);
             sendAccepted(senderIP, logSlot);
         } else {
@@ -215,18 +219,34 @@ public class Acceptor extends Thread {
         this.sendSocket.send(sendPacket);
     }
 
+    private void recordAcceptor() throws IOException {
+        Record log = new Record(this.maxPrepare, this.accNum, this.accVal);
+        byte[] output = serialize(log);
+        File file = new File("acceptor.txt");
+        FileOutputStream fos = null;
+        fos = new FileOutputStream(file);
+        fos.write(output);
+        fos.close();
+    }
 
-    // Change to stable storage
-    public void recordLog(Integer logSlot) {
-        Record log = new Record(logSlot, this.maxPrepare.get(logSlot), this.accNum.get(logSlot), this.accVal.get(logSlot));
-        if (this.acceptorLog.containsKey(logSlot)) {
-            this.acceptorLog.get(logSlot).add(log);
-        } else {
-            ArrayList<Record> values = new ArrayList<>();
-            values.add(log);
-            this.acceptorLog.put(logSlot, values);
-        }
+    private void recoverAcceptor() throws IOException, ClassNotFoundException {
+        Record recover = (Record)deserialize(readFromFile());
+        this.maxPrepare = recover.getMaxPrepare();
+        this.accNum = recover.getAccNum();
+        this.accVal = recover.getAccVal();
+    }
 
+    public byte[] readFromFile() throws IOException {
+        File file = new File("acceptor.txt");
+        byte[] getBytes = {};
+        getBytes = new byte[(int) file.length()];
+        InputStream is = new FileInputStream(file);
+        is.read(getBytes);
+        is.close();
+        return getBytes;
     }
 
 }
+
+
+
