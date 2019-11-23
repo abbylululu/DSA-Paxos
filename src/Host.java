@@ -12,7 +12,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class Host {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
         ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
@@ -115,9 +115,9 @@ public class Host {
 
         //TODO: Start from here
         // Construct current site(work as proposer, acceptor, learner simultaneously)
-        ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket);
+        ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket, queue);
 
-        new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, mySite).start();// child thread go here
+        new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, curSiteId).start();// child thread go here
         
 //==================================================================================================
         // TODO: UI
@@ -158,39 +158,4 @@ public class Host {
     }
 
     //==================================================================================================
-    //TODO: Helper function
-    // Serialize the CommunicateInfo to byte array
-    public static byte[] serialize(Object obj) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(obj);
-        oos.flush();
-        return bos.toByteArray();
-    }
-
-    // Only send the log that is identified as necessary
-    public static void sendMsgToOthers(ReservationSys mySite, DatagramSocket sendSocket,
-                                       ArrayList<HashMap<String, String>> sitesInfo,
-                                       ArrayList<String> recipients) throws IOException {
-        // build one message for all other sites
-        byte[] sendArray = serialize(buildMsg(mySite, recipients, sitesInfo));
-        UDPSend(recipients, sitesInfo, sendArray, sendSocket);
-    }
-
-    public static void UDPSend(ArrayList<String> recipients, ArrayList<HashMap<String, String>> sitesInfo, byte[] sendArray, DatagramSocket sendSocket) throws IOException {
-        for (int i = 0; i < recipients.size(); i++) {
-            String ipAddress = null;
-            String receivePort = null;
-            for (int j = 0; j < sitesInfo.size(); j++) {
-                if (sitesInfo.get(j).get("siteId").equals(recipients.get(i))) {
-                    ipAddress = sitesInfo.get(j).get("ip");
-                    receivePort = sitesInfo.get(j).get("startPort");
-                    break;
-                }
-            }
-            InetAddress targetIP = InetAddress.getByName(ipAddress);
-            DatagramPacket sendPacket = new DatagramPacket(sendArray, sendArray.length, targetIP, Integer.parseInt(receivePort));
-            sendSocket.send(sendPacket);
-        }
-    }
 }

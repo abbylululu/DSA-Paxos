@@ -3,6 +3,7 @@ import javafx.util.Pair;
 import java.lang.reflect.Array;
 import java.net.DatagramSocket;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 
 public class Proposer {
     private int uid; // node idx for unique identifier
@@ -10,11 +11,12 @@ public class Proposer {
     int sendPort;
     DatagramSocket sendSocket;
     private int current_proposal_number;
+    private String maxVal;
     private String reservation; // from user command insert
     private int next_log_slot; // from user command insert
 
     // blocking queue: for receiving promise and ack
-    private Queue<String> blocking_queue;
+    private BlockingQueue blocking_queue = null;
     // slot -> pair(curPropNum, Reservation(in string form))
     private HashMap<Integer, Pair<Integer, String>> my_proposals;
     // siteIp -> pair(accNum, accVal)
@@ -25,7 +27,7 @@ public class Proposer {
     // slot -> accVal
     private HashMap<Integer, String> learnt_slots;
 
-    public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket) {
+    public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket, BlockingQueue queue) {
         this.uid = uid;
         this.sitesInfo = sitesInfo;
         this.sendPort = Integer.parseInt(sitesInfo.get(uid).get("startPort"));
@@ -33,7 +35,7 @@ public class Proposer {
         this.current_proposal_number = uid;
         this.next_log_slot = 0;
 
-        this.blocking_queue = new LinkedList<>();
+        this.blocking_queue = queue;
         this.my_proposals = new HashMap<>();
         this.promise_queues = new HashMap<>();
         this.ack_queues = new HashMap<>();
@@ -160,8 +162,15 @@ public class Proposer {
         return curLog;
     }
 
+    public void recvNack(String message) {
+        // parse the received message
+        String[] splitted = message.split(" ");
+        int recvMaxNum = Integer.parseInt(splitted[1]);
+        this.current_proposal_number = Math.max(recvMaxNum, this.current_proposal_number);
+    }
+
     // after user input: reserve or cancel, start to propose a log slot
-    // return: 1: successful propose 0: unsuccessful propose
+    // return: 1: successful propose -1: accVal != reserve  0: accNum not big enough
     public int propose() {
         // 1. send prepare for proposing
         this.sendPrepare();
@@ -171,13 +180,14 @@ public class Proposer {
         int majority = (int) Math.ceil(numSites / 2.0); // FIXME: Am I right?
 
         // 2. blocking on receiving promise
-        int success = 0;
+        int success = 0; // 1: successful propose -1: accVal != reserve  0: accNum not big enough
         int maxAccNum = 0;
         String maxVal = null;
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
-        while(success == 0 && (System.currentTimeMillis() - startTime) < 10000) {
-            String curMsg = this.blocking_queue.poll();
+        while(success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
+            // FIXME: check poll method
+            String curMsg = (String)this.blocking_queue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -187,8 +197,6 @@ public class Proposer {
                 recvPromise(curMsg);
                 int numPromise = this.promise_queues.size();
                 if (numPromise >= majority) {
-                    // indicating successful proposal
-                    success = 1;
                     // try to choose largest accNum and accVal to send
                     for (Map.Entry<String, Pair<Integer, String>> mapElement : this.promise_queues.entrySet()) {
                         Pair<Integer, String> accEntry = mapElement.getValue();
@@ -200,28 +208,38 @@ public class Proposer {
                     }
                     // choose my own proposal value to send
                     if (maxVal == null) {
+                        // indicating successful proposal
+                        success = 1;
                         maxVal = this.reservation;
                     }
-                    // FIXME: what if my own reservation is dumped?
+                    // if my own reservation is dumped, my proposal is failed
+                    // and keep on looking for the next slot
+                    else {
+                        this.maxVal = maxVal;
+                        success = -1;
+                    }
                 }
+            }
+            else if (splitted[0].equals("nack")) {
+                recvNack(curMsg);
             }
             // when receiving commit for other slots
             else if (splitted[0].equals("commit")) {
                 recvCommit(curMsg);
             }
-            // if timeout, return 0 to main and retry
-            if (success == 0) return 0;
         }
-
+        // if timeout, return 0 to main and retry
+        if (success != 1) return success;
         // 3. send accept, if receiving promise from majority
-        if (success == 1) {
+        else {
             sendAccept(maxAccNum, maxVal, this.next_log_slot);
         }
 
         // 4. blocking on receiving ack
         startTime = System.currentTimeMillis();
-        while(success == 0 && (System.currentTimeMillis() - startTime) < 10000) {
-            String curMsg = this.blocking_queue.poll();
+        success = 0;
+        while(success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
+            String curMsg = (String)this.blocking_queue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -232,20 +250,23 @@ public class Proposer {
                     success = 1;
                 }
             }
+            else if (splitted[0].equals("nack")) {
+                recvNack(curMsg);
+            }
             // when receiving commit for other slots
             else if (splitted[0].equals("commit")) {
                 recvCommit(curMsg);
             }
         }
         // if timeout, return 0 to main and retry
-        if (success == 0) return 0;
+        if (success != 1) return success;
         // successfully proposed, learn the chosen slot
         this.learnt_slots.put(this.next_log_slot, maxVal);
 
         // 5. change role to learner, send commit
         sendCommit(maxVal);
 
-        return 1;
+        return success;
     }
 
     public int getUid() {
@@ -288,6 +309,14 @@ public class Proposer {
         this.current_proposal_number = current_proposal_number;
     }
 
+    public String getMaxVal() {
+        return maxVal;
+    }
+
+    public void setMaxVal(String maxVal) {
+        this.maxVal = maxVal;
+    }
+
     public String getReservation() {
         return reservation;
     }
@@ -304,11 +333,11 @@ public class Proposer {
         this.next_log_slot = next_log_slot;
     }
 
-    public Queue<String> getBlocking_queue() {
+    public BlockingQueue getBlocking_queue() {
         return blocking_queue;
     }
 
-    public void setBlocking_queue(Queue<String> blocking_queue) {
+    public void setBlocking_queue(BlockingQueue blocking_queue) {
         this.blocking_queue = blocking_queue;
     }
 
@@ -334,6 +363,14 @@ public class Proposer {
 
     public void setAck_queues(HashMap<String, String> ack_queues) {
         this.ack_queues = ack_queues;
+    }
+
+    public HashMap<Integer, String> getLearnt_slots() {
+        return learnt_slots;
+    }
+
+    public void setLearnt_slots(HashMap<Integer, String> learnt_slots) {
+        this.learnt_slots = learnt_slots;
     }
 
 //    public ArrayList<Integer> getCommitted_slots() {

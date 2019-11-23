@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 public class ReservationSys {
     private int uid;
@@ -16,12 +17,12 @@ public class ReservationSys {
     private HashMap<Integer, Reservation> log; // array of reservation object, in stable storage
     private Proposer proposer;
 
-    public ReservationSys(ArrayList<HashMap<String, String>> sitesInfo, int uid, DatagramSocket sendSocket) {
+    public ReservationSys(ArrayList<HashMap<String, String>> sitesInfo, int uid, DatagramSocket sendSocket, BlockingQueue queue) {
         this.uid = uid;
         this.sitesInfo = sitesInfo;
         this.dictionary = new ArrayList<>();
         this.log = new HashMap<>();
-        this.proposer = new Proposer(uid, this.sitesInfo, sendSocket);
+        this.proposer = new Proposer(uid, this.sitesInfo, sendSocket, queue);
     }
 
     public void store() {
@@ -69,7 +70,45 @@ public class ReservationSys {
 
     // -1: conflicted. 0: not added. 1: success
     public int insert (String[] orderInfo) {
-        // TODO: detect holes in log and update dictionary
+        // get the maxSlot index of current log
+        int maxSlot = 0;
+        for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+            maxSlot = Math.max(maxSlot, mapElement.getKey());
+        }
+        for (int i = 0; i < maxSlot; i++) {
+            // TODO: check key first then value next
+            // there is a hole in local log
+            if (this.log.get(i) == null) {
+                int cnt = 3;
+                while (cnt > 0) {
+                    this.proposer.setNext_log_slot(i);
+                    this.proposer.setReservation("");
+                    int proposeRet = proposer.propose();
+                    // if successfully get back the lost information
+                    if (proposeRet == -1) {
+                        break;
+                    }
+                    cnt--;
+                }
+                // successfully learnt hole
+                if (cnt > 0) {
+                    this.log.put(i, new Reservation(proposer.getMaxVal()));
+                    this.store();
+                    // update local dict
+                    for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+                        if (mapElement.getValue() == null) continue;
+                        Reservation curResv = mapElement.getValue();
+                        if (this.dictionary.contains(curResv)) continue;
+                        this.dictionary.add(curResv);
+                    }
+                }
+                else {
+                    // TODO: learn hole failed
+                    return 0;
+                }
+            }
+        }
+
         // 1. detect conflict
         String clientName = orderInfo[1];
         ArrayList<Integer> flights = new ArrayList<>();
@@ -81,20 +120,17 @@ public class ReservationSys {
         Reservation newResv = new Reservation("insert", clientName, flights);
         String reservation = newResv.flatten();
 
-        // 2. choose a log slot for proposing
-        // new slot
-        int maxSlot = 0;
-        for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
-            maxSlot = Math.max(maxSlot, mapElement.getKey());
-        }
 
         // 3. propose for the chosen slot
         this.proposer.setNext_log_slot(maxSlot);
         this.proposer.setReservation(reservation);
         int cnt = 3;
         while (cnt > 0) {
+            int proposeRet = proposer.propose();
             // if successfully proposed
-            if (proposer.propose() == 1) break;
+            if (proposeRet == 1) break;
+            // if failed in the competing of the chosen slot, need to propose for the next slot
+            else if(proposeRet == -1) this.proposer.setNext_log_slot(maxSlot + 1);
             cnt--;
         }
         // successfully proposed
@@ -121,6 +157,45 @@ public class ReservationSys {
     // -1: deleted before. 0: not added. 1: success
     public int delete (String[] orderInfo) {
         // TODO: detect holes in log and update dictionary
+        // get the maxSlot index of current log
+        int maxSlot = 0;
+        for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+            maxSlot = Math.max(maxSlot, mapElement.getKey());
+        }
+        for (int i = 0; i < maxSlot; i++) {
+            // TODO: check key first then value next
+            // there is a hole in local log
+            if (this.log.get(i) == null) {
+                int cnt = 3;
+                while (cnt > 0) {
+                    this.proposer.setNext_log_slot(i);
+                    this.proposer.setReservation("");
+                    int proposeRet = proposer.propose();
+                    // if successfully get back the lost information
+                    if (proposeRet == -1) {
+                        break;
+                    }
+                    cnt--;
+                }
+                // successfully learnt hole
+                if (cnt > 0) {
+                    this.log.put(i, new Reservation(proposer.getMaxVal()));
+                    this.store();
+                    // update local dict
+                    for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
+                        if (mapElement.getValue() == null) continue;
+                        Reservation curResv = mapElement.getValue();
+                        if (this.dictionary.contains(curResv)) continue;
+                        this.dictionary.add(curResv);
+                    }
+                }
+                else {
+                    // TODO: learn hole failed
+                    return 0;
+                }
+            }
+        }
+
         String clientName = orderInfo[1];
         ArrayList<Integer> flights = new ArrayList<>();
         for (String s : orderInfo[2].split(",")) {
@@ -136,13 +211,6 @@ public class ReservationSys {
                 // cancel request failed
                 return -1;
             }
-        }
-
-        // 3. choose a log slot for proposing
-        // new slot
-        int maxSlot = 0;
-        for (Map.Entry<Integer, Reservation> mapElement: this.log.entrySet()) {
-            maxSlot = Math.max(maxSlot, mapElement.getKey());
         }
 
         // 3. propose for the chosen slot
