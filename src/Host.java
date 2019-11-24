@@ -91,15 +91,7 @@ public class Host {
         }
 
 
-//==================================================================================================
-        // FIXME: separate directory and project structure
-        // Restore when site crashes
-        File timeFile = new File("timeTable.txt");
-        File dictFile = new File("dictionary.txt");
-        File logFile = new File("log.txt");
-        if (timeFile.exists() && dictFile.exists() && logFile.exists()) {
-            mySite.recover(siteNum);
-        }
+
 //==================================================================================================
         // Blocking Queue
         BlockingQueue queue = new ArrayBlockingQueue(1024);
@@ -120,6 +112,15 @@ public class Host {
         new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, curSiteId).start();// child thread go here
         
 //==================================================================================================
+        // FIXME: separate directory and project structure
+        // Restore when site crashes
+        File timeFile = new File("timeTable.txt");
+        File dictFile = new File("dictionary.txt");
+        File logFile = new File("log.txt");
+        if (timeFile.exists() && dictFile.exists() && logFile.exists()) {
+            mySite.recover(siteNum);
+        }
+
         // TODO: UI
         // main thread keeps receiving msgs from user at this site
         while (true) {

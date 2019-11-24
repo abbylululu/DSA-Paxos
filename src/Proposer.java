@@ -1,174 +1,52 @@
 import javafx.util.Pair;
-
-import java.lang.reflect.Array;
 import java.net.DatagramSocket;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class Proposer {
+    // ------------------MEMBER VARS------------------ //
     private int uid; // node idx for unique identifier
+    private int current_proposal_number;
+    private String maxVal;
+
+    // socket purpose
     private ArrayList<HashMap<String, String>> sitesInfo;
     int sendPort;
     DatagramSocket sendSocket;
-    private int current_proposal_number;
-    private String maxVal;
+
     private String reservation; // from user command insert
     private int next_log_slot; // from user command insert
 
     // blocking queue: for receiving promise and ack
     private BlockingQueue blocking_queue = null;
-    // slot -> pair(curPropNum, Reservation(in string form))
-    private HashMap<Integer, Pair<Integer, String>> my_proposals;
     // siteIp -> pair(accNum, accVal)
     private HashMap<String, Pair<Integer, String>> promise_queues;
-    // slot -> slot_queue(siteIp -> reservation(string form))
+    // siteIp -> reservation(string form)
+    // FIXME: why reservation?
     private HashMap<String, String> ack_queues;
-//    private ArrayList<Integer> committed_slots;
     // slot -> accVal
     private HashMap<Integer, String> learnt_slots;
 
+
+    // ------------------CONSTRUCTOR------------------ //
     public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket, BlockingQueue queue) {
         this.uid = uid;
+        this.current_proposal_number = uid;
+
         this.sitesInfo = sitesInfo;
         this.sendPort = Integer.parseInt(sitesInfo.get(uid).get("startPort"));
         this.sendSocket = sendSocket;
-        this.current_proposal_number = uid;
+
         this.next_log_slot = 0;
 
         this.blocking_queue = queue;
-        this.my_proposals = new HashMap<>();
         this.promise_queues = new HashMap<>();
         this.ack_queues = new HashMap<>();
-//        this.committed_slots = new ArrayList<>();
         this.learnt_slots = new HashMap<>();
     }
 
-//    public Proposer(int next_log_slot, String reservation, int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket) {
-//        this.uid = uid;
-//        this.sitesInfo = sitesInfo;
-//        this.sendPort = Integer.parseInt(sitesInfo.get(uid).get("startPort"));
-//        this.sendSocket = sendSocket;
-//        this.current_proposal_number = uid;
-//        this.reservation = reservation;
-//        this.next_log_slot = next_log_slot;
-//
-//        this.blocking_queue = new LinkedList<>();
-//        this.my_proposals = new HashMap<>();
-//        this.promise_queues = new HashMap<>();
-//        this.ack_queues = new HashMap<>();
-//        this.committed_slots = new ArrayList<>();
-//    }
 
-    public void sendPrepare() {
-        // choose a proposal number to propose
-        this.current_proposal_number += 10;
-        int n = this.current_proposal_number;
-
-        // keep a record of my proposals: slot -> proposalNum, reservation(string form)
-        Pair<Integer, String> insertInfo = new Pair<>(n, this.reservation);
-        this.my_proposals.put(this.next_log_slot, insertInfo);
-
-        // generate message for sending: "prepare curPropNum next_log_slot"
-        StringBuilder sb = new StringBuilder();
-        sb.append("prepare ");
-        sb.append(n);
-        sb.append(" ");
-        sb.append(this.next_log_slot);
-
-        // send prepare to all sites
-        for (int i = 0; i < this.sitesInfo.size(); i++) {
-            String recvIp = this.sitesInfo.get(i).get("ip");
-            Send prepare = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
-            prepare.start();
-        }
-    }
-
-    // promise form "Promise accNum accVal log_slot sender_ip"
-    public void recvPromise(String message) {
-        // parse the received message
-        String[] splitted = message.split(" ");
-        int accNum = Integer.parseInt(splitted[1]);
-        String accVal = splitted[2];
-        int log_slot = Integer.parseInt(splitted[3]);
-        String sender_ip = splitted[4];
-
-        // store in my promise queue for current log slot
-        // promise queues: slot_queue(siteIp -> pair(accNum, accVal)
-        Pair<Integer, String> recvAccs = new Pair<>(accNum, accVal);
-        this.promise_queues.put(sender_ip, recvAccs);
-    }
-
-    // message form: accept proposalNum reservation(string form)
-    public void sendAccept(int proposalNum, String reservation, int log_slot) {
-        // build the accept message to send
-        StringBuilder sb = new StringBuilder();
-        sb.append("accept ");
-        sb.append(proposalNum);
-        sb.append(" ");
-        sb.append(reservation);
-
-        // send accept to the same set of majority
-        for (Map.Entry<String, Pair<Integer, String>> mapElement: this.promise_queues.entrySet()) {
-            String recvIp = mapElement.getKey();
-            Send accept = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
-            accept.start();
-        }
-    }
-
-    // message form: ack maxPrepNum senderIp
-    public void recvAck(String message) {
-        // keep a record of ack message
-        // ack queue: slot -> slot_queue(siteIp -> reservation(string form))
-        // ack would always be dealing with self proposal
-        String curSiteIp = this.sitesInfo.get(this.uid).get("ip");
-        this.ack_queues.put(curSiteIp, this.reservation);
-    }
-
-    // message form: commit accVal logSlot senderIP
-    public void sendCommit(String accVal) {
-        // build the commit message
-        StringBuilder sb = new StringBuilder();
-        sb.append("commit ");
-        sb.append(accVal);
-        sb.append(" ");
-        sb.append(this.next_log_slot);
-        sb.append(" ");
-        sb.append(this.sitesInfo.get(uid).get("ip"));
-
-        // send commit to all sites except self
-        for (int i = 0; i < this.sitesInfo.size(); i++) {
-            if (i == this.uid) continue;
-            String recvIp = this.sitesInfo.get(i).get("ip");
-            Send commit = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
-            commit.start();
-        }
-    }
-
-    // message form: commit accVal logSlot senderIP
-    public void recvCommit(String message) {
-        // parse the received message
-        String[] splitted = message.split(" ");
-        int logSlot = Integer.parseInt(splitted[2]);
-        String accVal = splitted[1];
-        this.learnt_slots.put(logSlot, accVal);
-    }
-
-    public HashMap<Integer, Reservation> learn(HashMap<Integer, Reservation> curLog) {
-        for (Map.Entry<Integer, String> mapElement: this.learnt_slots.entrySet()) {
-            int curSlot = mapElement.getKey();
-            String curResv = mapElement.getValue();
-            curLog.put(curSlot, new Reservation(curResv));
-        }
-        return curLog;
-    }
-
-    public void recvNack(String message) {
-        // parse the received message
-        String[] splitted = message.split(" ");
-        int recvMaxNum = Integer.parseInt(splitted[1]);
-        this.current_proposal_number = Math.max(recvMaxNum, this.current_proposal_number);
-    }
-
+    // ------------------HELPERS------------------ //
     // after user input: reserve or cancel, start to propose a log slot
     // return: 1: successful propose -1: accVal != reserve  0: accNum not big enough
     public int propose() {
@@ -230,14 +108,15 @@ public class Proposer {
         }
         // if timeout, return 0 to main and retry
         if (success != 1) return success;
-        // 3. send accept, if receiving promise from majority
+
+            // 3. send accept, if receiving promise from majority
         else {
-            sendAccept(maxAccNum, maxVal, this.next_log_slot);
+            sendAccept(this.current_proposal_number, maxVal);
         }
 
         // 4. blocking on receiving ack
-        startTime = System.currentTimeMillis();
         success = 0;
+        startTime = System.currentTimeMillis();
         while(success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
             String curMsg = (String)this.blocking_queue.poll();
             if (curMsg == null) continue;
@@ -269,6 +148,125 @@ public class Proposer {
         return success;
     }
 
+
+    public void sendPrepare() {
+        // increment the proposal number
+        this.current_proposal_number += 10;
+
+        // generate message for sending: "prepare curPropNum next_log_slot"
+        StringBuilder sb = new StringBuilder();
+        sb.append("prepare ");
+        sb.append(this.current_proposal_number);
+        sb.append(" ");
+        sb.append(this.next_log_slot);
+
+        // send prepare to all sites
+        for (int i = 0; i < this.sitesInfo.size(); i++) {
+            String recvIp = this.sitesInfo.get(i).get("ip");
+            // FIXME: am I really sending
+            Send prepare = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
+            prepare.start();
+        }
+    }
+
+
+    // FIXME: don't need log_slot in promise message
+    // promise form "Promise accNum accVal log_slot sender_ip"
+    public void recvPromise(String message) {
+        // parse the received message
+        String[] splitted = message.split(" ");
+        int accNum = Integer.parseInt(splitted[1]);
+        String accVal = splitted[2];
+        String sender_ip = splitted[4];
+
+        // store in my promise queue for current log slot
+        // promise queues: slot_queue(siteIp -> pair(accNum, accVal)
+        Pair<Integer, String> recvAccs = new Pair<>(accNum, accVal);
+        this.promise_queues.put(sender_ip, recvAccs);
+    }
+
+
+    // message form: accept proposalNum reservation(string form) logSlot
+    public void sendAccept(int proposalNum, String reservation) {
+        // build the accept message to send
+        StringBuilder sb = new StringBuilder();
+        sb.append("accept ");
+        sb.append(proposalNum);
+        sb.append(" ");
+        sb.append(reservation);
+        sb.append(" ");
+        sb.append(this.next_log_slot);
+
+        // send accept to the same set of majority
+        for (Map.Entry<String, Pair<Integer, String>> mapElement: this.promise_queues.entrySet()) {
+            String recvIp = mapElement.getKey();
+            Send accept = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
+            accept.start();
+        }
+    }
+
+
+    // message form: ack maxPrepNum senderIp
+    public void recvAck(String message) {
+        // keep a record of ack message
+        // ack queue: slot -> slot_queue(siteIp -> reservation(string form))
+        // ack would always be dealing with self proposal
+        // FIXME: is reservation needed?
+        String curSiteIp = this.sitesInfo.get(this.uid).get("ip");
+        this.ack_queues.put(curSiteIp, this.reservation);
+    }
+
+
+    // message form: commit accVal logSlot senderIP
+    public void sendCommit(String accVal) {
+        // build the commit message
+        StringBuilder sb = new StringBuilder();
+        sb.append("commit ");
+        sb.append(accVal);
+        sb.append(" ");
+        sb.append(this.next_log_slot);
+        sb.append(" ");
+        sb.append(this.sitesInfo.get(uid).get("ip"));
+
+        // send commit to all sites except self
+        for (int i = 0; i < this.sitesInfo.size(); i++) {
+            if (i == this.uid) continue;
+            String recvIp = this.sitesInfo.get(i).get("ip");
+            Send commit = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
+            commit.start();
+        }
+    }
+
+
+    // message form: commit accVal logSlot senderIP
+    public void recvCommit(String message) {
+        // parse the received message
+        String[] splitted = message.split(" ");
+        int logSlot = Integer.parseInt(splitted[2]);
+        String accVal = splitted[1];
+        this.learnt_slots.put(logSlot, accVal);
+    }
+
+
+    public void recvNack(String message) {
+        // parse the received message
+        String[] splitted = message.split(" ");
+        int recvMaxNum = Integer.parseInt(splitted[1]);
+        this.current_proposal_number = Math.max(recvMaxNum, this.current_proposal_number);
+    }
+
+
+    public HashMap<Integer, String> learn(HashMap<Integer, String> curLog) {
+        for (Map.Entry<Integer, String> mapElement: this.learnt_slots.entrySet()) {
+            int curSlot = mapElement.getKey();
+            String curResv = mapElement.getValue();
+            curLog.put(curSlot, curResv);
+        }
+        return curLog;
+    }
+
+
+    // ------------------GETTERS AND SETTERS------------------ //
     public int getUid() {
         return uid;
     }
@@ -339,14 +337,6 @@ public class Proposer {
 
     public void setBlocking_queue(BlockingQueue blocking_queue) {
         this.blocking_queue = blocking_queue;
-    }
-
-    public HashMap<Integer, Pair<Integer, String>> getMy_proposals() {
-        return my_proposals;
-    }
-
-    public void setMy_proposals(HashMap<Integer, Pair<Integer, String>> my_proposals) {
-        this.my_proposals = my_proposals;
     }
 
     public HashMap<String, Pair<Integer, String>> getPromise_queues() {
