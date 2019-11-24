@@ -10,7 +10,6 @@ public class Proposer {
 
     // socket purpose
     private ArrayList<HashMap<String, String>> sitesInfo;
-    int sendPort;
     DatagramSocket sendSocket;
 
     private String reservation; // from user command insert
@@ -33,7 +32,6 @@ public class Proposer {
         this.current_proposal_number = uid;
 
         this.sitesInfo = sitesInfo;
-        this.sendPort = Integer.parseInt(sitesInfo.get(uid).get("startPort"));
         this.sendSocket = sendSocket;
 
         this.next_log_slot = 0;
@@ -295,14 +293,6 @@ public class Proposer {
 
     public void setSitesInfo(ArrayList<HashMap<String, String>> sitesInfo) {
         this.sitesInfo = sitesInfo;
-    }
-
-    public int getSendPort() {
-        return sendPort;
-    }
-
-    public void setSendPort(int sendPort) {
-        this.sendPort = sendPort;
     }
 
     public DatagramSocket getSendSocket() {
