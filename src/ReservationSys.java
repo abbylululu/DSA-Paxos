@@ -168,7 +168,15 @@ public class ReservationSys {
             // if successfully proposed
             if (proposeRet == 1) break;
                 // if failed in the competing of the chosen slot, need to propose for the next slot
-            else if(proposeRet == -1) this.proposer.setNext_log_slot(maxSlot + 1);
+            else if(proposeRet == -1) {
+                // store information for current chosen slot
+                this.log.put(this.proposer.getNext_log_slot(), proposer.getMaxVal());
+                this.store();
+                // update local dict
+                this.updateDict();
+                // propose for the next slot
+                this.proposer.setNext_log_slot(maxSlot + 1);
+            }
             cnt--;
         }
         // successfully proposed
