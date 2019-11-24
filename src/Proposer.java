@@ -174,8 +174,15 @@ public class Proposer {
     public void recvPromise(String message) {
         // parse the received message
         String[] splitted = message.split(" ");
-        int accNum = Integer.parseInt(splitted[1]);
-        String accVal = splitted[2];
+        int accNum = 0;
+        String accVal = null;
+        if (splitted[1].equals("null") && splitted[2].equals("null")) {
+            accNum = this.current_proposal_number;
+            accVal = this.reservation;
+        } else {
+            accNum = Integer.parseInt(splitted[1]);
+            accVal = splitted[2];
+        }
         String sender_ip = splitted[4];
 
         // store in my promise queue for current log slot

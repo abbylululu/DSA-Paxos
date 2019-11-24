@@ -71,13 +71,13 @@ public class Acceptor extends Thread {
             }
             // parse the string
             assert recvMessage != null;
-            System.out.println("[test] " + siteId + " receives " + recvMessage);
+            System.out.println("[test] " + siteId + " receives =>" + recvMessage);
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
                 String transmission = null;
                 if (getCommand[0].equals("promise")) {
-                    transmission = "promise " + getCommand[1] + " " + getCommand[2] + " " + senderIp;
+                    transmission = "promise " + getCommand[1] + " " + getCommand[2] + " " + getCommand[3] + " "+ senderIp;
 
                 } else if (getCommand[0].equals("ack")) {
                     transmission = "ack " + getCommand[1] + " " + senderIp;
@@ -86,7 +86,7 @@ public class Acceptor extends Thread {
                     transmission = "nack " + getCommand[1] + " " + senderIp;
                 }
                 System.err.println("Proposer<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
-                System.out.println("[test]A->P transmission through block queue is: " + transmission);
+                System.out.println("[test]A->P transmission through blocking queue is: " + transmission);
 
                 try {
                     this.queue.put(transmission);
@@ -157,7 +157,7 @@ public class Acceptor extends Thread {
     // @From: Proposer
     // @To: Acceptor(current)
     public void recvPrepare(Integer n, String senderIP, Integer logSlot) throws IOException {
-        if (n > this.maxPrepare.get(logSlot)) {
+        if (!this.maxPrepare.containsKey(logSlot) || n > this.maxPrepare.get(logSlot)) {
             this.maxPrepare.put(logSlot, n);
             recordAcceptor();
             sendPromise(senderIP, logSlot);
@@ -169,7 +169,7 @@ public class Acceptor extends Thread {
     // @From: Proposer
     // @To: Acceptor(current)
     public void recvAccept(Integer n, String v, String senderIP, Integer logSlot) throws IOException {
-        if (n >= this.maxPrepare.get(logSlot)) {
+        if (this.maxPrepare.containsKey(logSlot) && n >= this.maxPrepare.get(logSlot)) {
             this.accNum.put(logSlot, n);
             this.accVal.put(logSlot, v);
             this.maxPrepare.put(logSlot, n);
@@ -184,11 +184,22 @@ public class Acceptor extends Thread {
     // @From: Acceptor(current)
     // @To: Proposer
     public void sendPromise(String senderIP, Integer logSlot) throws IOException {
-        String promiseMsg = "promise " + Integer.toString(this.accNum.get(logSlot)) + " "
-                + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + senderIP;
+        String promiseMsg = null;
+        if (this.accNum.containsKey(logSlot) && this.accVal.containsKey(logSlot)) {
+            promiseMsg = "promise " + Integer.toString(this.accNum.get(logSlot)) + " "
+                    + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + senderIP;
+        } else {
+            String curAccNum = "null", curAccVal = "null";
+            if (this.accNum.containsKey(logSlot)) {
+                curAccNum = Integer.toString(this.accNum.get(logSlot));
+            }
+            if (this.accVal.containsKey(logSlot)) {
+                curAccVal = this.accVal.get(logSlot);
+            }
+            promiseMsg = "promise " + curAccNum + " " + curAccVal + " " + Integer.toString(logSlot) + " " + senderIP;
+        }
         acceptorSend(senderIP, promiseMsg);
-        System.err.println("Acceptor<" + siteId + "> sends promise(" + Integer.toString(this.accNum.get(logSlot)) + ","
-                + this.accVal.get(logSlot) +") to " + ipToID(senderIP));
+        System.err.println("Acceptor<" + siteId + "> sends " + promiseMsg +" to " + ipToID(senderIP));
     }
 
     // @From: Acceptor(current)
