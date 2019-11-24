@@ -111,10 +111,20 @@ public class ReservationSys {
     public void updateDict() {
         for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
             if (mapElement.getValue() == null) continue;
-            String curResv = mapElement.getValue();
-            Reservation curResvObj = new Reservation(curResv);
-            if (this.dictionary.contains(curResvObj)) continue;
-            this.dictionary.add(curResvObj);
+            String curEntry = mapElement.getValue();
+            Reservation curResvObj = new Reservation(curEntry);
+
+            String[] splitted = curEntry.split(" ");
+            String operation = splitted[0];
+            // insert
+            if (operation.equals("reserve")) {
+                if (this.dictionary.contains(curResvObj)) continue;
+                this.dictionary.add(curResvObj);
+            }
+            // delete
+            else if (operation.equals("cancel")) {
+                this.dictionary.remove(curResvObj);
+            }
         }
     }
 
