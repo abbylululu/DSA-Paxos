@@ -21,6 +21,7 @@ public class Host {
         try {
             JSONParser parser = new JSONParser();
             JSONObject data = (JSONObject) parser.parse(new FileReader("C:/Users/Jade Wang/Documents/Project/Paxos-Distributed-Flight-Reservation-Application/src/knownhosts.json"));
+            //JSONObject data = (JSONObject) parser.parse(new FileReader("./knownhosts.json"));
             JSONObject hosts = (JSONObject) data.get("hosts");
 
             ArrayList<String> allSiteId = new ArrayList<>();
