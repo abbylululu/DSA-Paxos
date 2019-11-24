@@ -182,7 +182,6 @@ public class ReservationSys {
         }
         else {
             // not adding to the log
-            // TODO: notify user
             return 0;
         }
     }
@@ -216,6 +215,7 @@ public class ReservationSys {
             String curLogEntry = splitted[1];
             this.log.put(curSlot, curLogEntry);
         }
+        this.updateDict();
     }
 
 
