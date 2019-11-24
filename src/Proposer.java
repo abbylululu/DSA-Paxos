@@ -58,7 +58,7 @@ public class Proposer {
 
         // 2. blocking on receiving promise
         int success = 0; // 1: successful propose -1: accVal != reserve  0: accNum not big enough
-        int maxAccNum = 0;
+        int maxAccNum = -1;
         String maxVal = null;
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
@@ -94,6 +94,7 @@ public class Proposer {
                     else {
                         this.maxVal = maxVal;
                         success = -1;
+                        break;
                     }
                 }
             } else if (splitted[0].equals("nack")) {
@@ -176,10 +177,7 @@ public class Proposer {
         String[] splitted = message.split(" ");
         int accNum = 0;
         String accVal = null;
-        if (splitted[1].equals("null") && splitted[2].equals("null")) {
-            accNum = this.current_proposal_number;
-            accVal = this.reservation;
-        } else {
+        if (!splitted[1].equals("null")) {
             accNum = Integer.parseInt(splitted[1]);
             accVal = splitted[2];
         }
