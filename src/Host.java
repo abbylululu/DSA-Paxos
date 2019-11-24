@@ -20,7 +20,7 @@ public class Host {
         // read host name and port number from json
         try {
             JSONParser parser = new JSONParser();
-            JSONObject data = (JSONObject) parser.parse(new FileReader("./knownhosts.json"));
+            JSONObject data = (JSONObject) parser.parse(new FileReader("C:/Users/Jade Wang/Documents/Project/Paxos-Distributed-Flight-Reservation-Application/src/knownhosts.json"));
             JSONObject hosts = (JSONObject) data.get("hosts");
 
             ArrayList<String> allSiteId = new ArrayList<>();
@@ -94,7 +94,6 @@ public class Host {
         // Blocking Queue
         BlockingQueue queue = new ArrayBlockingQueue(1024);
 //==================================================================================================
-        //TODO: UDP Transportation
         // Start port is for listening
         // End port is for sending
         // Create receive socket by start port number
@@ -103,7 +102,6 @@ public class Host {
         // Create send socket by end port number
         DatagramSocket sendSocket = new DatagramSocket(Integer.parseInt(curEndPort));
 
-        //TODO: Start from here
         // Construct current site(work as proposer, acceptor, learner simultaneously)
         ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket, queue);
 
@@ -128,22 +126,24 @@ public class Host {
             if (input[0].equals("reserve")) {// insert into my site, update timetable, log and dictionary
                 // TODO: how to handle conflicted reserve?
                 if (mySite.insert(input) == 0) {
-                    // TODO: notify user, time out and not adding
+                    System.out.println("Cannot schedule reservation for " + input[1] + ".");
+                } else {
+                    System.out.println("Reservation submitted for " + input[1] + ".");
                 }
 
             } else if (input[0].equals("cancel")) {// delete from my site's dictionary, update log and timetable
-                if (mySite.delete(input) == -1) {
-                    System.out.println("Cancel Error");
-                }
-                else if (mySite.delete(input) == 0) {
-                    // TODO: notify user, time out and not adding
+                int result = mySite.delete(input);
+                if (result == 1) {
+                    System.out.println("Reservation for " + input[1] + " cancelled.");
+                } else  {// 0 or -1
+                    System.out.println("Cannot cancel reservation for " + input[1] + ".");
                 }
 
             } else if (input[0].equals("view")) {// Print dictionary here
-//                mySite.printDictionary();
+                mySite.printDictionary();
 
             } else if (input[0].equals("log")) {// Print log here
-//                mySite.printLog();
+                mySite.printLog();
 
             } else if (input[0].equals("quit")) {
                 System.exit(0);

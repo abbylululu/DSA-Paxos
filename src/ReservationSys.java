@@ -1,8 +1,6 @@
 import java.io.*;
 import java.net.DatagramSocket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class ReservationSys {
@@ -43,7 +41,7 @@ public class ReservationSys {
         for (String s : orderInfo[2].split(",")) {
             flights.add(Integer.parseInt(s));
         }
-        if (isConflict(flights)) return -1;
+        if (isConflict(flights)) {return -1;}
 
         Reservation newResv = new Reservation("insert", clientName, flights);
         String reservation = newResv.flatten();
@@ -221,6 +219,21 @@ public class ReservationSys {
     }
 
 
+    void printLog() {
+        for (int i = 0; i < this.log.size(); i++) {
+            System.out.println(this.log.get(i));
+        }
+    }
+
+    void printDictionary() {
+        ArrayList<Reservation> newDict = new ArrayList<>();
+        newDict = this.dictionary;
+        for (int i = 0; i < newDict.size(); i++) {
+            newDict.sort(new CustomComparator());
+            System.out.println(newDict.get(i).flatten());
+        }
+    }
+
     // ------------------GETTERS AND SETTERS------------------ //
 
     public int getUid() {
@@ -261,5 +274,13 @@ public class ReservationSys {
 
     public void setProposer(Proposer proposer) {
         this.proposer = proposer;
+    }
+}
+
+
+class CustomComparator implements Comparator<Reservation> {
+    @Override
+    public int compare(Reservation o1, Reservation o2) {
+        return o1.getClientName().compareTo(o2.getClientName());
     }
 }
