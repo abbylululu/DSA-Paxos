@@ -167,6 +167,8 @@ public class Proposer {
             Send prepare = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
             prepare.start();
         }
+
+        System.err.println("sending prepare(" + this.current_proposal_number + ")to all sites");
     }
 
 
@@ -203,6 +205,8 @@ public class Proposer {
             Send accept = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
             accept.start();
         }
+
+        System.err.println("sending accept(" + proposalNum + "," + "'" + reservation + "') to same majority sites");
     }
 
 
@@ -235,6 +239,8 @@ public class Proposer {
             Send commit = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
             commit.start();
         }
+
+        System.err.println("sending commit ('" + accVal + "')to all sites except self");
     }
 
 
