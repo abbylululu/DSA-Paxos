@@ -8,13 +8,13 @@ import java.net.UnknownHostException;
 
 public class Send extends Thread{
     private String targetIp;
-    private int sendPort; // allocated start port
+    private int receivePort; // allocated start port
     DatagramSocket sendSocket;
     String message;
 
-    public Send(String targetIp, int sendPort, DatagramSocket sendSocket, String message) {
+    public Send(String targetIp, int receivePort, DatagramSocket sendSocket, String message) {
         this.targetIp = targetIp;
-        this.sendPort = sendPort;
+        this.receivePort = receivePort;
         this.sendSocket = sendSocket;
         this.message = message;
     }
@@ -29,7 +29,7 @@ public class Send extends Thread{
     }
 
     public void run() {
-        System.out.println("[DEBUG]sending message: " + this.message + " to " + this.targetIp + " with send port " + this.sendPort);
+        System.out.println("[DEBUG]sending message: " + this.message + " to " + this.targetIp + " with receive port " + this.receivePort);
         byte[] sendArray = new byte[0];
         try {
             sendArray = serialize(this.message);
@@ -39,7 +39,7 @@ public class Send extends Thread{
         DatagramPacket sendPacket = null;
         try {
             sendPacket = new DatagramPacket(sendArray, sendArray.length,
-                    InetAddress.getByName(this.targetIp), this.sendPort);
+                    InetAddress.getByName(this.targetIp), this.receivePort);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

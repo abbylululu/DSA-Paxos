@@ -62,9 +62,9 @@ public class Proposer {
         String maxVal = null;
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
-        while(success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
+        while (success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
             // FIXME: check poll method
-            String curMsg = (String)this.blocking_queue.poll();
+            String curMsg = (String) this.blocking_queue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -96,8 +96,7 @@ public class Proposer {
                         success = -1;
                     }
                 }
-            }
-            else if (splitted[0].equals("nack")) {
+            } else if (splitted[0].equals("nack")) {
                 recvNack(curMsg);
             }
             // when receiving commit for other slots
@@ -116,8 +115,8 @@ public class Proposer {
         // 4. blocking on receiving ack
         success = 0;
         startTime = System.currentTimeMillis();
-        while(success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
-            String curMsg = (String)this.blocking_queue.poll();
+        while (success != 1 && (System.currentTimeMillis() - startTime) < 10000) {
+            String curMsg = (String) this.blocking_queue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -127,8 +126,7 @@ public class Proposer {
                 if (numAck >= majority) {
                     success = 1;
                 }
-            }
-            else if (splitted[0].equals("nack")) {
+            } else if (splitted[0].equals("nack")) {
                 recvNack(curMsg);
             }
             // when receiving commit for other slots
@@ -163,7 +161,7 @@ public class Proposer {
         for (int i = 0; i < this.sitesInfo.size(); i++) {
             String recvIp = this.sitesInfo.get(i).get("ip");
             // FIXME: am I really sending
-            Send prepare = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
+            Send prepare = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, sb.toString());
             prepare.start();
         }
 
@@ -199,10 +197,16 @@ public class Proposer {
         sb.append(this.next_log_slot);
 
         // send accept to the same set of majority
-        for (Map.Entry<String, Map.Entry<Integer, String>> mapElement: this.promise_queues.entrySet()) {
+        for (Map.Entry<String, Map.Entry<Integer, String>> mapElement : this.promise_queues.entrySet()) {
             String recvIp = mapElement.getKey();
-            Send accept = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
-            accept.start();
+            for (int i = 0; i < this.sitesInfo.size(); i++) {
+                if (this.sitesInfo.get(i).get("ip").equals(recvIp)) {
+                    Send accept = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, sb.toString());
+                    accept.start();
+                    break;
+                }
+            }
+
         }
 
         System.err.println("sending accept(" + proposalNum + "," + "'" + reservation + "') to same majority sites");
@@ -235,7 +239,7 @@ public class Proposer {
         for (int i = 0; i < this.sitesInfo.size(); i++) {
             if (i == this.uid) continue;
             String recvIp = this.sitesInfo.get(i).get("ip");
-            Send commit = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
+            Send commit = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, sb.toString());
             commit.start();
         }
 
@@ -262,7 +266,7 @@ public class Proposer {
 
 
     public HashMap<Integer, String> learn(HashMap<Integer, String> curLog) {
-        for (Map.Entry<Integer, String> mapElement: this.learnt_slots.entrySet()) {
+        for (Map.Entry<Integer, String> mapElement : this.learnt_slots.entrySet()) {
             int curSlot = mapElement.getKey();
             String curResv = mapElement.getValue();
             curLog.put(curSlot, curResv);
