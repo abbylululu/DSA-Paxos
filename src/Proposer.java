@@ -20,7 +20,7 @@ public class Proposer {
     // blocking queue: for receiving promise and ack
     private BlockingQueue blocking_queue = null;
     // siteIp -> pair(accNum, accVal)
-    private HashMap<String, Pair<Integer, String>> promise_queues;
+    private HashMap<String, Map.Entry<Integer, String>> promise_queues;
     // siteIp -> reservation(string form)
     // FIXME: why reservation?
     private HashMap<String, String> ack_queues;
@@ -76,8 +76,8 @@ public class Proposer {
                 int numPromise = this.promise_queues.size();
                 if (numPromise >= majority) {
                     // try to choose largest accNum and accVal to send
-                    for (Map.Entry<String, Pair<Integer, String>> mapElement : this.promise_queues.entrySet()) {
-                        Pair<Integer, String> accEntry = mapElement.getValue();
+                    for (Map.Entry<String, Map.Entry<Integer, String>> mapElement : this.promise_queues.entrySet()) {
+                        Map.Entry<Integer, String> accEntry = mapElement.getValue();
                         int curAccNum = accEntry.getKey();
                         String curAccString = accEntry.getValue();
                         if (curAccNum > maxAccNum) {
@@ -183,7 +183,7 @@ public class Proposer {
 
         // store in my promise queue for current log slot
         // promise queues: slot_queue(siteIp -> pair(accNum, accVal)
-        Pair<Integer, String> recvAccs = new Pair<>(accNum, accVal);
+        Map.Entry<Integer, String> recvAccs = new AbstractMap.SimpleEntry<Integer, String>(accNum, accVal);
         this.promise_queues.put(sender_ip, recvAccs);
     }
 
@@ -200,7 +200,7 @@ public class Proposer {
         sb.append(this.next_log_slot);
 
         // send accept to the same set of majority
-        for (Map.Entry<String, Pair<Integer, String>> mapElement: this.promise_queues.entrySet()) {
+        for (Map.Entry<String, Map.Entry<Integer, String>> mapElement: this.promise_queues.entrySet()) {
             String recvIp = mapElement.getKey();
             Send accept = new Send(recvIp, this.sendPort, this.sendSocket, sb.toString());
             accept.start();
@@ -345,11 +345,11 @@ public class Proposer {
         this.blocking_queue = blocking_queue;
     }
 
-    public HashMap<String, Pair<Integer, String>> getPromise_queues() {
+    public HashMap<String, Map.Entry<Integer, String>> getPromise_queues() {
         return promise_queues;
     }
 
-    public void setPromise_queues(HashMap<String, Pair<Integer, String>> promise_queues) {
+    public void setPromise_queues(HashMap<String, Map.Entry<Integer, String>> promise_queues) {
         this.promise_queues = promise_queues;
     }
 
