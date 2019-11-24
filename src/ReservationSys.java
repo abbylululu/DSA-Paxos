@@ -43,7 +43,7 @@ public class ReservationSys {
         }
         if (isConflict(flights)) {return -1;}
 
-        Reservation newResv = new Reservation("insert", clientName, flights);
+        Reservation newResv = new Reservation("reserve", clientName, flights);
         String reservation = newResv.flatten();
 
 
@@ -65,24 +65,18 @@ public class ReservationSys {
         }
 
         String clientName = orderInfo[1];
-        ArrayList<Integer> flights = new ArrayList<>();
-        for (String s : orderInfo[2].split(",")) {
-            flights.add(Integer.parseInt(s));
-        }
-
-        Reservation newResv = new Reservation("delete", clientName, flights);
-        String reservation = newResv.flatten();
+        String cancel = "cancel " + clientName;
 
         // 2. check whether it has been deleted before
         for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
-            if (reservation.equals(mapElement.getValue())) {
+            if (cancel.equals(mapElement.getValue())) {
                 // cancel request failed
                 return -1;
             }
         }
 
         // 3. propose for the chosen slot
-        return proposeChosenSlot(maxSlot, reservation);
+        return proposeChosenSlot(maxSlot, cancel);
     }
 
 
@@ -195,7 +189,7 @@ public class ReservationSys {
     }
 
 
-    // format: slot,ops clientName 1 2 3
+    // format: slot,ops clientName (1 2 3)
     public void store() {
         // logSlot accVal senderIp
         for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
