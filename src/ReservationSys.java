@@ -120,8 +120,9 @@ public class ReservationSys {
         for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
             if (mapElement.getValue() == null) continue;
             String curResv = mapElement.getValue();
-            if (this.dictionary.contains(curResv)) continue;
-            this.dictionary.add(new Reservation(curResv));
+            Reservation curResvObj = new Reservation(curResv);
+            if (this.dictionary.contains(curResvObj)) continue;
+            this.dictionary.add(curResvObj);
         }
     }
 
@@ -159,6 +160,7 @@ public class ReservationSys {
     }
 
 
+    // 0: not adding to the log  1: successfully proposed
     public int proposeChosenSlot(int maxSlot, String reservation) {
         this.proposer.setNext_log_slot(maxSlot);
         this.proposer.setReservation(reservation);
