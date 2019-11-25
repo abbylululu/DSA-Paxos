@@ -142,7 +142,7 @@ public class Proposer {
         this.learnt_slots.put(this.next_log_slot, maxVal);
 
         // 5. change role to learner, send commit
-        sendCommit(maxVal);
+        sendCommit(this.getCurrent_proposal_number(),maxVal);
 
         return success;
     }
@@ -232,11 +232,13 @@ public class Proposer {
     }
 
 
-    // message form: commit accVal logSlot senderIP
-    public void sendCommit(String accVal) {
+    // message form: commit accNum accVal logSlot senderIP
+    public void sendCommit(int accNum, String accVal) {
         // build the commit message
         StringBuilder sb = new StringBuilder();
         sb.append("commit ");
+        sb.append(accNum);
+        sb.append(" ");
         sb.append(accVal);
         sb.append(" ");
         sb.append(this.next_log_slot);
@@ -251,7 +253,7 @@ public class Proposer {
         }
 
         System.err.println("sending commit ('" + accVal + "')to all sites");
-        // TODO
+        System.out.println("Distinguished Learner<" + this.sitesInfo.get(uid).get("siteId") + "> sends commit ('" + accVal + "')to all sites");
     }
 
 
