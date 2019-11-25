@@ -43,7 +43,7 @@ public class Learner extends Thread{
             flights.add(Integer.parseInt(splitted[i]));
         }
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
-            Learner.log.put(Integer.parseInt(logSlot), accVal.toString());// update log
+            Learner.log.put(Integer.parseInt(logSlot), accVal.toString().trim());// update log
         }
 
         if (operation.equals("reserve")) {

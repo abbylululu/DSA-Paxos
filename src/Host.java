@@ -244,7 +244,7 @@ public class Host {
     public static boolean prevDel(String newCancel) {
         for (Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
 //            System.out.println("***equal?" + mapElement.getValue().trim().equals(newCancel));
-            if (newCancel.equals(mapElement.getValue().trim())) {
+            if (newCancel.equals(mapElement.getValue())) {
                 return true;
             }
         }
