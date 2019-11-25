@@ -83,12 +83,11 @@ public class Acceptor extends Thread {
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
-                String transmission = recvMessage;
-                System.err.println("Proposer<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
+                System.err.println("Proposer<" + siteId + "> received " + recvMessage + " from " + ipToID(senderIp));
                 //System.out.println("[test]A->P transmission through blocking queue is: " + transmission);
 
                 try {
-                    this.proposerQueue.put(transmission);
+                    this.proposerQueue.put(recvMessage);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -118,12 +117,11 @@ public class Acceptor extends Thread {
                 }
 
             } else if (getCommand[0].equals("accepted") || getCommand[0].equals("commit")) {// A->DL & DL->L
-                String transmission = recvMessage;
-                System.err.println("Learner<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
+                System.err.println("Learner<" + siteId + "> received " + recvMessage + " from " + ipToID(senderIp));
                 //System.out.println("[test] A To L transmission through block queue is: " + transmission);
 
                 try {
-                    this.learnerQueue.put(transmission);
+                    this.learnerQueue.put(recvMessage);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -169,6 +167,7 @@ public class Acceptor extends Thread {
     // @To: Acceptor(current)
     // ToDo: check null pointer
     public void recvAccept(Integer n, String v, String senderIP, Integer logSlot) throws IOException {
+        if (!this.maxPrepare.containsKey(logSlot)) this.maxPrepare.put(logSlot, 0);
         if (this.maxPrepare.containsKey(logSlot) && n >= this.maxPrepare.get(logSlot)) {
             this.accNum.put(logSlot, n);
             this.accVal.put(logSlot, v);
@@ -205,10 +204,14 @@ public class Acceptor extends Thread {
     // @From: Acceptor(current)
     // @To: Proposer
     public void sendNack(String senderIP, Integer logSlot) throws IOException {
-        String nackMsg = "nack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + this.siteIp;
+        String maxNum = "null";
+        if (this.maxPrepare.containsKey(logSlot)) {
+            maxNum = Integer.toString(this.maxPrepare.get(logSlot));
+        }
+        String nackMsg = "nack " + maxNum + " " + this.siteIp;
         acceptorSend(senderIP, nackMsg);
         System.err.println("Acceptor<" + siteId + "> sends nack(" +
-                Integer.toString(this.maxPrepare.get(logSlot))  +") to " + ipToID(senderIP));
+                maxNum  +") to " + ipToID(senderIP));
     }
 
     // @From: Acceptor(current)
