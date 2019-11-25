@@ -17,25 +17,30 @@ public class Acceptor extends Thread {
     private byte[] buffer = new byte[65535];
     private ArrayList<HashMap<String, String>> sitesInfo;
     private String siteId;
+    private String siteIp;
     private BlockingQueue queue = null;
 
 
     public Acceptor(BlockingQueue queue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
-                    ArrayList<HashMap<String, String>> sitesInfo, String siteId) throws IOException, ClassNotFoundException {
-        File acceptorFile = new File("acceptor.txt");
-        if (acceptorFile.exists()) {
-            recoverAcceptor();
-        } else {
-            this.maxPrepare = new HashMap<>();
-            this.accNum = new HashMap<>();
-            this.accVal = new HashMap<>();
-        }
+                    ArrayList<HashMap<String, String>> sitesInfo, String siteId, String siteIp) throws IOException, ClassNotFoundException {
+        this.maxPrepare = new HashMap<>();
+        this.accNum = new HashMap<>();
+        this.accVal = new HashMap<>();
+//        File acceptorFile = new File("acceptor.txt");
+//        if (acceptorFile.exists()) {
+//            recoverAcceptor();
+//        } else {
+//            this.maxPrepare = new HashMap<>();
+//            this.accNum = new HashMap<>();
+//            this.accVal = new HashMap<>();
+//        }
         this.receiveSocket = receiveSocket;
         this.sendSocket = sendSocket;
         this.running = true;
         this.sitesInfo = sitesInfo;
         this.queue = queue;
         this.siteId = siteId;
+        this.siteIp = siteIp;
     }
 
     public void run() {
@@ -75,16 +80,7 @@ public class Acceptor extends Thread {
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
-                String transmission = null;
-                if (getCommand[0].equals("promise")) {
-                    transmission = "promise " + getCommand[1] + " " + getCommand[2] + " " + getCommand[3] + " "+ senderIp;
-
-                } else if (getCommand[0].equals("ack")) {
-                    transmission = "ack " + getCommand[1] + " " + senderIp;
-
-                } else {
-                    transmission = "nack " + getCommand[1] + " " + senderIp;
-                }
+                String transmission = recvMessage;
                 System.err.println("Proposer<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
                 System.out.println("[test]A->P transmission through blocking queue is: " + transmission);
 
@@ -114,12 +110,7 @@ public class Acceptor extends Thread {
                 }
 
             } else if (getCommand[0].equals("accepted") || getCommand[0].equals("commit")) {// A->DL & DL->L
-                String transmission = null;
-                if (getCommand[0].equals("accepted")) {
-                    transmission = recvMessage + " " + senderIp;
-                } else {
-                    transmission = recvMessage + " " + senderIp;
-                }
+                String transmission = recvMessage;
                 System.err.println("Learner<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
                 System.out.println("[test] A To L transmission through block queue is: " + transmission);
 
@@ -187,7 +178,7 @@ public class Acceptor extends Thread {
         String promiseMsg = null;
         if (this.accNum.containsKey(logSlot) && this.accVal.containsKey(logSlot)) {
             promiseMsg = "promise " + Integer.toString(this.accNum.get(logSlot)) + " "
-                    + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + senderIP;
+                    + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + this.siteIp;
         } else {
             String curAccNum = "null", curAccVal = "null";
             if (this.accNum.containsKey(logSlot)) {
@@ -196,7 +187,7 @@ public class Acceptor extends Thread {
             if (this.accVal.containsKey(logSlot)) {
                 curAccVal = this.accVal.get(logSlot);
             }
-            promiseMsg = "promise " + curAccNum + " " + curAccVal + " " + Integer.toString(logSlot) + " " + senderIP;
+            promiseMsg = "promise " + curAccNum + " " + curAccVal + " " + Integer.toString(logSlot) + " " + this.siteIp;
         }
         acceptorSend(senderIP, promiseMsg);
         System.err.println("Acceptor<" + siteId + "> sends " + promiseMsg +" to " + ipToID(senderIP));
@@ -205,7 +196,7 @@ public class Acceptor extends Thread {
     // @From: Acceptor(current)
     // @To: Proposer
     public void sendNack(String senderIP, Integer logSlot) throws IOException {
-        String nackMsg = "nack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + senderIP;
+        String nackMsg = "nack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + this.siteIp;
         acceptorSend(senderIP, nackMsg);
         System.err.println("Acceptor<" + siteId + "> sends nack(" +
                 Integer.toString(this.maxPrepare.get(logSlot))  +") to " + ipToID(senderIP));
@@ -214,7 +205,7 @@ public class Acceptor extends Thread {
     // @From: Acceptor(current)
     // @To: Proposer
     public void sendAck(String senderIP, Integer logSlot) throws IOException {
-        String ackMsg = "ack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + senderIP;
+        String ackMsg = "ack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + this.siteIp;
         acceptorSend(senderIP, ackMsg);
         System.err.println("Acceptor<" + siteId + "> sends ack(" +
                 Integer.toString(this.maxPrepare.get(logSlot))  +") to " + ipToID(senderIP));
@@ -225,7 +216,7 @@ public class Acceptor extends Thread {
     // The proposer that proposed this proposal is the DL
     public void sendAccepted(String senderIP, Integer logSlot) throws IOException {
         String acceptedMsg = "accepted " + Integer.toString(this.accNum.get(logSlot)) + " "
-                + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + senderIP;
+                + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + this.siteIp;
         acceptorSend(senderIP, acceptedMsg);
         System.err.println("Acceptor<" + siteId + "> sends accepted(" +
                 Integer.toString(this.accNum.get(logSlot)) + ","

@@ -20,8 +20,8 @@ public class Host {
         // read host name and port number from json
         try {
             JSONParser parser = new JSONParser();
-            JSONObject data = (JSONObject) parser.parse(new FileReader("C:/Users/Jade Wang/Documents/Project/Paxos-Distributed-Flight-Reservation-Application/src/knownhosts.json"));
-            //JSONObject data = (JSONObject) parser.parse(new FileReader("./knownhosts.json"));
+            //JSONObject data = (JSONObject) parser.parse(new FileReader("C:/Users/Jade Wang/Documents/Project/Paxos-Distributed-Flight-Reservation-Application/src/knownhosts.json"));
+            JSONObject data = (JSONObject) parser.parse(new FileReader("./knownhosts.json"));
             JSONObject hosts = (JSONObject) data.get("hosts");
 
             ArrayList<String> allSiteId = new ArrayList<>();
@@ -106,7 +106,7 @@ public class Host {
         // Construct current site(work as proposer, acceptor, learner simultaneously)
         ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket, queue);
 
-        new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, curSiteId).start();// child thread go here
+        new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
         
 //==================================================================================================
         // FIXME: separate directory and project structure

@@ -122,6 +122,7 @@ public class Proposer {
             if (splitted[0].equals("ack")) {
                 recvAck(curMsg);
                 int numAck = this.ack_queues.size();
+                System.out.println("!!!!!!![DEBUG]number of ack is " + numAck);
                 if (numAck >= majority) {
                     success = 1;
                 }
@@ -133,6 +134,7 @@ public class Proposer {
                 recvCommit(curMsg);
             }
         }
+        System.out.println("[DEBUG]after majority ack, success is " + success);
         // if timeout, return 0 to main and retry
         if (success != 1) return success;
         // successfully proposed, learn the chosen slot
@@ -222,8 +224,8 @@ public class Proposer {
         // ack queue: slot -> slot_queue(siteIp -> reservation(string form))
         // ack would always be dealing with self proposal
         // FIXME: is reservation needed?
-        String curSiteIp = this.sitesInfo.get(this.uid).get("ip");
-        this.ack_queues.put(curSiteIp, this.reservation);
+        String[] msg = message.split(" ");
+        this.ack_queues.put(msg[2], this.reservation);
     }
 
 
