@@ -120,18 +120,47 @@ public class ReservationSys {
         for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
             if (mapElement.getValue() == null) continue;
             String curEntry = mapElement.getValue();
-            Reservation curResvObj = new Reservation(curEntry);
 
             String[] splitted = curEntry.split(" ");
             String operation = splitted[0];
+
+//            System.out.println("***size before: " + this.dictionary.size());
+//            for (int j = 0; j < this.dictionary.size(); j++) {
+//                System.out.println("*** " + this.dictionary.get(j).flatten());
+//            }
+
             // insert
             if (operation.equals("reserve")) {
-                if (this.dictionary.contains(curResvObj)) continue;
+                Reservation curResvObj = new Reservation(curEntry);
+//                System.out.println("####in log: " + curEntry);
+//                System.out.println("####changed to obj: " + curResvObj.flatten());
+//                if (!this.dictionary.isEmpty()) System.out.println("####in dict: " + this.dictionary.get(0).flatten());
+//                System.out.println("&&&&&&" + curResvObj.equals(this.dictionary.get(0)));
+                boolean dups = false;
+                for (int i = 0; i < this.dictionary.size(); i++) {
+                    if (this.dictionary.get(i).flatten().equals(curEntry)) {
+                        dups = true;
+                    }
+                }
+                if (dups) continue;
+//                if (this.dictionary.contains(curResvObj)) continue;
+//                System.out.println("***&&&");
                 this.dictionary.add(curResvObj);
             }
             // delete
             else if (operation.equals("cancel")) {
-                this.dictionary.remove(curResvObj);
+                String clientName = splitted[1];
+                System.out.println("***log entry cancle client: " + clientName);
+
+                for(int i = 0; i < this.dictionary.size(); i++) {
+                    if (this.dictionary.get(i).getClientName().equals(clientName)) {
+                        System.out.println("***deleting record: " + this.dictionary.get(i).flatten());
+
+                        this.dictionary.remove(this.dictionary.get(i));
+
+                        System.out.println("***size after: " + this.dictionary.size());
+                    }
+                }
             }
         }
     }
@@ -182,6 +211,7 @@ public class ReservationSys {
             if (proposeRet == 1) break;
                 // if failed in the competing of the chosen slot, need to propose for the next slot
             else if(proposeRet == -1) {
+                System.out.println("hello???????");
                 // store information for current chosen slot
                 this.log.put(this.proposer.getNext_log_slot(), proposer.getMaxVal());
                 this.store();
