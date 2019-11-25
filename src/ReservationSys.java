@@ -156,7 +156,7 @@ public class ReservationSys {
 //                System.out.println("&&&&&&" + curResvObj.equals(this.dictionary.get(0)));
                 boolean dups = false;
                 for (int i = 0; i < Learner.dictionary.size(); i++) {
-                    if (Learner.dictionary.get(i).flatten().equals(curEntry)) {
+                    if (Learner.dictionary.get(i).flatten().equals(curResvObj.flatten())) {
                         dups = true;
                     }
                 }
