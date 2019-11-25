@@ -168,6 +168,7 @@ public class Proposer {
         }
 
         System.err.println("sending prepare(" + this.current_proposal_number + ")to all sites");
+        System.out.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends prepare(" + this.current_proposal_number + ")to all sites");
     }
 
 
@@ -216,6 +217,7 @@ public class Proposer {
         }
 
         System.err.println("sending accept(" + proposalNum + "," + "'" + reservation + "') to same majority sites");
+        System.out.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends accept(" + proposalNum + "," + "'" + reservation + "') to same majority sites");
     }
 
 
@@ -241,15 +243,15 @@ public class Proposer {
         sb.append(" ");
         sb.append(this.sitesInfo.get(uid).get("ip"));
 
-        // send commit to all sites except self
+        // send commit to all sites
         for (int i = 0; i < this.sitesInfo.size(); i++) {
-            if (i == this.uid) continue;
             String recvIp = this.sitesInfo.get(i).get("ip");
             Send commit = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, sb.toString());
             commit.start();
         }
 
-        System.err.println("sending commit ('" + accVal + "')to all sites except self");
+        System.err.println("sending commit ('" + accVal + "')to all sites");
+        // TODO
     }
 
 

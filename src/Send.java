@@ -29,7 +29,6 @@ public class Send extends Thread{
     }
 
     public void run() {
-        System.out.println("[DEBUG]sending message: " + this.message + " to " + this.targetIp + " with receive port " + this.receivePort);
         byte[] sendArray = new byte[0];
         try {
             sendArray = serialize(this.message);
