@@ -79,7 +79,7 @@ public class Acceptor extends Thread {
             }
             // parse the string
             assert recvMessage != null;
-            System.out.println("+++[test] " + siteId + " receives =>" + recvMessage);
+//            System.out.println("+++[test] " + siteId + " receives =>" + recvMessage);
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P

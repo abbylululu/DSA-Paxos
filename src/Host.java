@@ -97,22 +97,22 @@ public class Host {
         // End port is for sending
         // Create receive socket by start port number
         Integer receivePort = Integer.parseInt(curStartPort);
-        DatagramSocket receiveSocket = new DatagramSocket(receivePort);
         // Create send socket by end port number
-        DatagramSocket sendSocket = new DatagramSocket(Integer.parseInt(curEndPort));
+        Integer sendPort = Integer.parseInt(curEndPort);
+        DatagramSocket receiveSocket = new DatagramSocket(receivePort);
+        DatagramSocket sendSocket = new DatagramSocket(sendPort);
 
         new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
         new Learner(learnerQueue).start();
         Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
 //==================================================================================================
-        // FIXME: separate directory and project structure
+        // TODO: store and recover log
         // Restore when site crashes
 //        File logFile = new File("log.txt");
 //        if (logFile.exists()) {
 //            mySite.recover();
 //        }
 
-        // TODO: UI
         // main thread keeps receiving msgs from user at this site
         while (true) {
             System.out.println("[test]Please enter the command: ");
@@ -120,8 +120,7 @@ public class Host {
             String commandLine = in.nextLine();
             String[] input = commandLine.split("\\s+");
 
-            if (input[0].equals("reserve")) {// insert into my site, update timetable, log and dictionary
-                // TODO: how to handle conflicted reserve?
+            if (input[0].equals("reserve")) {
                 // process input
                 Reservation newResv = processInput(input);
                 // learn hole
@@ -130,6 +129,7 @@ public class Host {
                 assert newResv != null;
                 if(isConflict(newResv.getFlights())) {
                     System.out.println("Conflict reservation for " + input[1] + ".");
+                    continue;
                 }
                 // choose a slot to propose
                 int logSlot = chooseSlot();
@@ -140,12 +140,13 @@ public class Host {
                     System.out.println("Reservation submitted for " + input[1] + ".");
                 }
 
-            } else if (input[0].equals("cancel")) {// delete from my site's dictionary, update log and timetable
+            } else if (input[0].equals("cancel")) {
                 // learn hole
                 learnHole(proposer);
                 // check if previously deleted
                 if(prevDel(commandLine)) {
                     System.out.println("previously deleted cancel for " + input[1] + ".");
+                    continue;
                 }
                 // choose a slot to propose
                 int logSlot = chooseSlot();
@@ -173,12 +174,14 @@ public class Host {
 
     //==================================================================================================
     public static int chooseSlot() {
+        if (Learner.log.isEmpty()) {
+            return 0;
+        }
         int maxSlot = -1;
         for(Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
             maxSlot = Math.max(maxSlot, mapElement.getKey());
         }
-        if (maxSlot == 0) return maxSlot;
-        else return maxSlot + 1;
+        return maxSlot + 1;
     }
 
 
@@ -248,7 +251,7 @@ public class Host {
     public static void printDictionary() {
         ArrayList<Reservation> newDict = Learner.dictionary;
         for (int i = 0; i < newDict.size(); i++) {
-            newDict.sort(new CustomComparator());
+//            newDict.sort(new CustomComparator());
             System.out.println(newDict.get(i).flatten());
         }
     }

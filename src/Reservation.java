@@ -12,18 +12,19 @@ public class Reservation {
         this.clientName = clientName;
         this.flights = flights;
     }
-    // accVal format: operation clientName flights
-    Reservation(String accVal) {
-        String[] splitted = accVal.split(" ");
-        this.operation = splitted[0];
-        this.clientName = splitted[1];
 
-        ArrayList<Integer> newFlights = new ArrayList<>();
-        for (int i = 2; i < splitted.length; i++) {
-            newFlights.add(Integer.parseInt(splitted[i]));
-        }
-        this.flights = newFlights;
-    }
+//    // accVal format: operation clientName flights
+//    Reservation(String accVal) {
+//        String[] splitted = accVal.split(" ");
+//        this.operation = splitted[0];
+//        this.clientName = splitted[1];
+//
+//        ArrayList<Integer> newFlights = new ArrayList<>();
+//        for (int i = 2; i < splitted.length; i++) {
+//            newFlights.add(Integer.parseInt(splitted[i]));
+//        }
+//        this.flights = newFlights;
+//    }
 
     // HELPER
     public String flatten() {
