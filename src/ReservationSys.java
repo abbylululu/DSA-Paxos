@@ -26,13 +26,17 @@ public class ReservationSys {
     // -1: conflicted. 0: not added. 1: success
     public int insert (String[] orderInfo) {
         // get the maxSlot index of current log
-        int maxSlot = 0;
-        for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
-            maxSlot = Math.max(maxSlot, mapElement.getKey());
-        }
-        int offsetRet = offsetHole(maxSlot);
-        if (offsetRet == 0) {
-            // TODO: learn hole failed
+        int maxSlot = -1;
+        if (!this.log.isEmpty()) {
+            // offset potential holes
+            for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
+                maxSlot = Math.max(maxSlot, mapElement.getKey());
+            }
+
+            int offsetRet = offsetHole(maxSlot);
+            if (offsetRet == 0) {
+                // TODO: learn hole failed
+            }
         }
 
         // 1. detect conflict
@@ -48,20 +52,24 @@ public class ReservationSys {
 
 
         // 3. propose for the chosen slot
-        return proposeChosenSlot(maxSlot, reservation);
+        return proposeChosenSlot(maxSlot + 1, reservation);
     }
 
 
     // -1: deleted before. 0: not added. 1: success
     public int delete (String[] orderInfo) {
         // get the maxSlot index of current log
-        int maxSlot = 0;
-        for (Map.Entry<Integer, String> mapElement: this.log.entrySet()) {
-            maxSlot = Math.max(maxSlot, mapElement.getKey());
-        }
-        int offsetRet = offsetHole(maxSlot);
-        if (offsetRet == 0) {
-            // TODO: learn hole failed
+        int maxSlot = -1;
+        if (!this.log.isEmpty()) {
+            // offset hole in log
+            for (Map.Entry<Integer, String> mapElement : this.log.entrySet()) {
+                maxSlot = Math.max(maxSlot, mapElement.getKey());
+            }
+
+            int offsetRet = offsetHole(maxSlot);
+            if (offsetRet == 0) {
+                // TODO: learn hole failed
+            }
         }
 
         String clientName = orderInfo[1];
@@ -76,7 +84,7 @@ public class ReservationSys {
         }
 
         // 3. propose for the chosen slot
-        return proposeChosenSlot(maxSlot, cancel);
+        return proposeChosenSlot(maxSlot + 1, cancel);
     }
 
 
@@ -130,10 +138,11 @@ public class ReservationSys {
 
 
     public int offsetHole(int maxSlot) {
-        for (int i = 0; i < maxSlot; i++) {
+        for (int i = 0; i <= maxSlot; i++) {
             // TODO: check key first then value next
             // there is a hole in local log
             if (this.log.get(i) == null) {
+                System.out.println("hello????");
                 int cnt = 3;
                 while (cnt > 0) {
                     this.proposer.setNext_log_slot(i);
@@ -179,7 +188,7 @@ public class ReservationSys {
                 // update local dict
                 this.updateDict();
                 // propose for the next slot
-                this.proposer.setNext_log_slot(maxSlot + 1);
+                this.proposer.setNext_log_slot(this.proposer.getNext_log_slot() + 1);
             }
             cnt--;
         }

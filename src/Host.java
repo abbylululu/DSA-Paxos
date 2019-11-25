@@ -111,10 +111,10 @@ public class Host {
 //==================================================================================================
         // FIXME: separate directory and project structure
         // Restore when site crashes
-        File logFile = new File("log.txt");
-        if (logFile.exists()) {
-            mySite.recover();
-        }
+//        File logFile = new File("log.txt");
+//        if (logFile.exists()) {
+//            mySite.recover();
+//        }
 
         // TODO: UI
         // main thread keeps receiving msgs from user at this site

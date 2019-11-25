@@ -138,6 +138,7 @@ public class Proposer {
         // if timeout, return 0 to main and retry
         if (success != 1) return success;
         // successfully proposed, learn the chosen slot
+        System.out.println("successfully proposed, learn the chosen slot: " + this.next_log_slot);
         this.learnt_slots.put(this.next_log_slot, maxVal);
 
         // 5. change role to learner, send commit
