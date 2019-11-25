@@ -93,7 +93,8 @@ public class Host {
 
 //==================================================================================================
         // Blocking Queue
-        BlockingQueue queue = new ArrayBlockingQueue(1024);
+        BlockingQueue proposerQueue = new ArrayBlockingQueue(1024);
+        BlockingQueue learnerQueue = new ArrayBlockingQueue(1024);
 //==================================================================================================
         // Start port is for listening
         // End port is for sending
@@ -104,10 +105,10 @@ public class Host {
         DatagramSocket sendSocket = new DatagramSocket(Integer.parseInt(curEndPort));
 
         // Construct current site(work as proposer, acceptor, learner simultaneously)
-        ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket, queue);
+        ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket, proposerQueue);
 
-        new Acceptor(queue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
-        
+        new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
+        new Learner(learnerQueue).start();
 //==================================================================================================
         // FIXME: separate directory and project structure
         // Restore when site crashes
@@ -126,7 +127,8 @@ public class Host {
 
             if (input[0].equals("reserve")) {// insert into my site, update timetable, log and dictionary
                 // TODO: how to handle conflicted reserve?
-                if (mySite.insert(input) == 0) {
+                int res = mySite.insert(input);
+                if ( res == 0 || res == -1) {
                     System.out.println("Cannot schedule reservation for " + input[1] + ".");
                 } else {
                     System.out.println("Reservation submitted for " + input[1] + ".");

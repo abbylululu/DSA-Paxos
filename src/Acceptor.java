@@ -18,10 +18,12 @@ public class Acceptor extends Thread {
     private ArrayList<HashMap<String, String>> sitesInfo;
     private String siteId;
     private String siteIp;
-    private BlockingQueue queue = null;
+    private BlockingQueue proposerQueue = null;
+    private BlockingQueue learnerQueue = null;
 
 
-    public Acceptor(BlockingQueue queue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
+
+    public Acceptor(BlockingQueue proposerQueue, BlockingQueue learnerQueue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
                     ArrayList<HashMap<String, String>> sitesInfo, String siteId, String siteIp) throws IOException, ClassNotFoundException {
         this.maxPrepare = new HashMap<>();
         this.accNum = new HashMap<>();
@@ -38,7 +40,8 @@ public class Acceptor extends Thread {
         this.sendSocket = sendSocket;
         this.running = true;
         this.sitesInfo = sitesInfo;
-        this.queue = queue;
+        this.proposerQueue = proposerQueue;
+        this.learnerQueue = learnerQueue;
         this.siteId = siteId;
         this.siteIp = siteIp;
     }
@@ -76,7 +79,7 @@ public class Acceptor extends Thread {
             }
             // parse the string
             assert recvMessage != null;
-            //System.out.println("[test] " + siteId + " receives =>" + recvMessage);
+            System.out.println("+++[test] " + siteId + " receives =>" + recvMessage);
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
@@ -85,7 +88,7 @@ public class Acceptor extends Thread {
                 //System.out.println("[test]A->P transmission through blocking queue is: " + transmission);
 
                 try {
-                    this.queue.put(transmission);
+                    this.proposerQueue.put(transmission);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -120,7 +123,7 @@ public class Acceptor extends Thread {
                 //System.out.println("[test] A To L transmission through block queue is: " + transmission);
 
                 try {
-                    this.queue.put(transmission);
+                    this.learnerQueue.put(transmission);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -164,6 +167,7 @@ public class Acceptor extends Thread {
 
     // @From: Proposer
     // @To: Acceptor(current)
+    // ToDo: check null pointer
     public void recvAccept(Integer n, String v, String senderIP, Integer logSlot) throws IOException {
         if (this.maxPrepare.containsKey(logSlot) && n >= this.maxPrepare.get(logSlot)) {
             this.accNum.put(logSlot, n);
