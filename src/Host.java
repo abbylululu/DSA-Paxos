@@ -64,6 +64,7 @@ public class Host {
             e.printStackTrace();
         }
 
+//==================================================================================================
         // ---------test---------//
         String id = args[0];
 
@@ -121,6 +122,7 @@ public class Host {
             String[] input = commandLine.split("\\s+");
 
             if (input[0].equals("reserve")) {
+                assert input.length == 3;
                 // process input
                 Reservation newResv = processInput(input);
                 // learn hole
@@ -141,6 +143,7 @@ public class Host {
                 }
 
             } else if (input[0].equals("cancel")) {
+                assert(input.length == 2);
                 // learn hole
                 learnHole(proposer);
                 // check if previously deleted
@@ -240,7 +243,8 @@ public class Host {
 
     public static boolean prevDel(String newCancel) {
         for (Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
-            if (newCancel.equals(mapElement.getValue())) {
+//            System.out.println("***equal?" + mapElement.getValue().trim().equals(newCancel));
+            if (newCancel.equals(mapElement.getValue().trim())) {
                 return true;
             }
         }
@@ -251,7 +255,7 @@ public class Host {
     public static void printDictionary() {
         ArrayList<Reservation> newDict = Learner.dictionary;
         for (int i = 0; i < newDict.size(); i++) {
-//            newDict.sort(new CustomComparator());
+            newDict.sort(new CustomComparator());
             System.out.println(newDict.get(i).flatten());
         }
     }

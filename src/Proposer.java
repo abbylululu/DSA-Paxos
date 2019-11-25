@@ -191,6 +191,8 @@ public class Proposer {
         String msg = String.format("accept %d %s %d", proposalNumber,
                 proposalVal, this.current_log_slot);
 
+//        System.out.println("****accept from apple is: " + msg);
+
         for (int i = 0; i < this.sitesInfo.size(); i++) {
             String recvIp = this.sitesInfo.get(i).get("ip");
             Send accept = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, msg);

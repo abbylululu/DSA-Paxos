@@ -1,5 +1,6 @@
 import java.lang.String;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class Reservation {
     private String operation;
@@ -39,6 +40,7 @@ public class Reservation {
         return sb.toString();
     }
 
+
     // GETTERS and SETTERS
     public String getOperation() {
         return this.operation;
@@ -58,5 +60,13 @@ public class Reservation {
 
     public void setFlights(ArrayList<Integer> flights) {
         this.flights = flights;
+    }
+}
+
+
+class CustomComparator implements Comparator<Reservation> {
+    @Override
+    public int compare(Reservation o1, Reservation o2) {
+        return o1.getClientName().compareTo(o2.getClientName());
     }
 }
