@@ -99,9 +99,9 @@ public class Proposer {
                 recvNack(curMsg);
             }
             // when receiving commit for other slots
-            else if (splitted[0].equals("commit")) {
-                recvCommit(curMsg);
-            }
+//            else if (splitted[0].equals("commit")) {
+//                recvCommit(curMsg);
+//            }
         }
         // if timeout, return 0 to main and retry
         if (success != 1) return success;
@@ -129,10 +129,10 @@ public class Proposer {
             } else if (splitted[0].equals("nack")) {
                 recvNack(curMsg);
             }
-            // when receiving commit for other slots
-            else if (splitted[0].equals("commit")) {
-                recvCommit(curMsg);
-            }
+//            // when receiving commit for other slots
+//            else if (splitted[0].equals("commit")) {
+//                recvCommit(curMsg);
+//            }
         }
         System.out.println("[DEBUG]after majority ack, success is " + success);
         // if timeout, return 0 to main and retry
@@ -257,14 +257,14 @@ public class Proposer {
     }
 
 
-    // message form: commit accVal logSlot senderIP
-    public void recvCommit(String message) {
-        // parse the received message
-        String[] splitted = message.split(" ");
-        int logSlot = Integer.parseInt(splitted[2]);
-        String accVal = splitted[1];
-        this.learnt_slots.put(logSlot, accVal);
-    }
+//    // message form: commit accVal logSlot senderIP
+//    public void recvCommit(String message) {
+//        // parse the received message
+//        String[] splitted = message.split(" ");
+//        int logSlot = Integer.parseInt(splitted[2]);
+//        String accVal = splitted[1];
+//        this.learnt_slots.put(logSlot, accVal);
+//    }
 
 
     public void recvNack(String message) {
