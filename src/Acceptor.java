@@ -102,8 +102,13 @@ public class Acceptor extends Thread {
                     try {
                         System.err.println("Acceptor<" + siteId + "> received accept(" +
                                 getCommand[2] + "," + getCommand[3] + ") from " + ipToID(senderIp));
-                        recvAccept(Integer.parseInt(getCommand[1]), getCommand[2] + " " + getCommand[3]
-                                + " " + getCommand[4], senderIp, Integer.parseInt(getCommand[5]));
+                        if (getCommand[2].equals("cancel")) {
+                            recvAccept(Integer.parseInt(getCommand[1]), getCommand[2] + " " + getCommand[3],
+                                    senderIp, Integer.parseInt(getCommand[4]));
+                        } else {
+                            recvAccept(Integer.parseInt(getCommand[1]), getCommand[2] + " " + getCommand[3]
+                                    + " " + getCommand[4], senderIp, Integer.parseInt(getCommand[5]));
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
