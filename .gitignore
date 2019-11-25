@@ -1,0 +1,10 @@
+
+*.class
+
+*.txt
+
+.idea/misc.xml
+
+src/knownhosts.json
+
+out/production/Paxos-Distributed-Flight-Reservation-Application/knownhosts.json
