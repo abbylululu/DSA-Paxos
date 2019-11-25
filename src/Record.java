@@ -1,3 +1,7 @@
+/*
+* This data structure is for stable storage of Acceptor
+ */
+
 import java.io.Serializable;
 import java.util.HashMap;
 

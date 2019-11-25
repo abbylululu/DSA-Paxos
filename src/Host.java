@@ -13,11 +13,10 @@ public class Host {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
         ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
-        Integer siteNum = 0;
+        int siteNum = 0;
         // read host name and port number from json
         try {
             JSONParser parser = new JSONParser();
-            //JSONObject data = (JSONObject) parser.parse(new FileReader("C:/Users/Jade Wang/Documents/Project/Paxos-Distributed-Flight-Reservation-Application/src/knownhosts.json"));
             JSONObject data = (JSONObject) parser.parse(new FileReader("./knownhosts.json"));
             JSONObject hosts = (JSONObject) data.get("hosts");
 
@@ -91,8 +90,8 @@ public class Host {
 
 //==================================================================================================
         // Blocking Queue
-        BlockingQueue proposerQueue = new ArrayBlockingQueue(1024);
-        BlockingQueue learnerQueue = new ArrayBlockingQueue(1024);
+        BlockingQueue<String> proposerQueue = new ArrayBlockingQueue<String>(1024);
+        BlockingQueue<String> learnerQueue = new ArrayBlockingQueue<String>(1024);
 //==================================================================================================
         // Start port is for listening
         // End port is for sending
@@ -122,7 +121,7 @@ public class Host {
             String[] input = commandLine.split("\\s+");
 
             if (input[0].equals("reserve")) {
-                assert input.length == 3;
+                if (input.length != 3) continue;
                 // process input
                 Reservation newResv = processInput(input);
                 // learn hole
@@ -143,7 +142,7 @@ public class Host {
                 }
 
             } else if (input[0].equals("cancel")) {
-                assert(input.length == 2);
+                if (input.length != 2) continue;
                 // learn hole
                 learnHole(proposer);
                 // check if previously deleted

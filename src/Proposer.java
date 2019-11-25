@@ -10,7 +10,7 @@ public class Proposer {
     private int uid;
     private ArrayList<HashMap<String, String>> sitesInfo;
     private DatagramSocket sendSocket; // send
-    private BlockingQueue blocking_queue; // receive
+    private BlockingQueue<String> blocking_queue; // receive
 
     private int current_proposal_number;
     private int current_log_slot;
@@ -22,7 +22,7 @@ public class Proposer {
     // ------------------CONSTRUCTOR------------------ //
 
 
-    public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket, BlockingQueue blocking_queue) {
+    public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket, BlockingQueue<String> blocking_queue) {
         this.uid = uid;
         this.sitesInfo = sitesInfo;
         this.sendSocket = sendSocket;

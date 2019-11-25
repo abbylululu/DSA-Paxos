@@ -18,12 +18,12 @@ public class Acceptor extends Thread {
     private ArrayList<HashMap<String, String>> sitesInfo;
     private String siteId;
     private String siteIp;
-    private BlockingQueue proposerQueue = null;
-    private BlockingQueue learnerQueue = null;
+    private BlockingQueue<String> proposerQueue = null;
+    private BlockingQueue<String> learnerQueue = null;
 
 
 
-    public Acceptor(BlockingQueue proposerQueue, BlockingQueue learnerQueue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
+    public Acceptor(BlockingQueue<String> proposerQueue, BlockingQueue<String> learnerQueue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
                     ArrayList<HashMap<String, String>> sitesInfo, String siteId, String siteIp) throws IOException, ClassNotFoundException {
         this.maxPrepare = new HashMap<>();
         this.accNum = new HashMap<>();
@@ -31,10 +31,6 @@ public class Acceptor extends Thread {
 //        File acceptorFile = new File("acceptor.txt");
 //        if (acceptorFile.exists()) {
 //            recoverAcceptor();
-//        } else {
-//            this.maxPrepare = new HashMap<>();
-//            this.accNum = new HashMap<>();
-//            this.accVal = new HashMap<>();
 //        }
         this.receiveSocket = receiveSocket;
         this.sendSocket = sendSocket;
