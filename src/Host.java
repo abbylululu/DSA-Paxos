@@ -231,10 +231,6 @@ public class Host {
             }
             return new Reservation("reserve", clientName, newFlights);
         }
-        // cancel
-        else if (input.length == 2) {
-            return new Reservation("cancel", clientName, new ArrayList<>());
-        }
         return null;
     }
 
@@ -242,7 +238,6 @@ public class Host {
     public static boolean prevDel(String newCancel) {
         for (Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
             if (newCancel.equals(mapElement.getValue())) {
-                // cancel request failed
                 return true;
             }
         }
