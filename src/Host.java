@@ -253,9 +253,9 @@ public class Host {
 
     public static void printDictionary() {
         ArrayList<Reservation> newDict = Learner.dictionary;
+        newDict.sort(new CustomComparator());
         for (int i = 0; i < newDict.size(); i++) {
-            newDict.sort(new CustomComparator());
-            System.out.println(newDict.get(i).flatten());
+            System.out.println(newDict.get(i).getClientName() + " " + newDict.get(i).getPrintFlight());
         }
     }
 

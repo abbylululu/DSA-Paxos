@@ -40,6 +40,14 @@ public class Reservation {
         return sb.toString();
     }
 
+    public String getPrintFlight() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < this.flights.size(); i++) {
+            sb.append(flights.get(i));
+            if (i < this.flights.size() - 1) sb.append(",");
+        }
+        return sb.toString();
+    }
 
     // GETTERS and SETTERS
     public String getOperation() {
