@@ -76,13 +76,13 @@ public class Acceptor extends Thread {
             }
             // parse the string
             assert recvMessage != null;
-            System.out.println("[test] " + siteId + " receives =>" + recvMessage);
+            //System.out.println("[test] " + siteId + " receives =>" + recvMessage);
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
                 String transmission = recvMessage;
                 System.err.println("Proposer<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
-                System.out.println("[test]A->P transmission through blocking queue is: " + transmission);
+                //System.out.println("[test]A->P transmission through blocking queue is: " + transmission);
 
                 try {
                     this.queue.put(transmission);
@@ -117,7 +117,7 @@ public class Acceptor extends Thread {
             } else if (getCommand[0].equals("accepted") || getCommand[0].equals("commit")) {// A->DL & DL->L
                 String transmission = recvMessage;
                 System.err.println("Learner<" + siteId + "> received " + transmission + " from " + ipToID(senderIp));
-                System.out.println("[test] A To L transmission through block queue is: " + transmission);
+                //System.out.println("[test] A To L transmission through block queue is: " + transmission);
 
                 try {
                     this.queue.put(transmission);
