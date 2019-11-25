@@ -107,6 +107,7 @@ public class Proposer {
     public boolean startSynod(Integer logSlot, String val) {
         this.current_log_slot = logSlot;
         this.current_proposal_val = val;
+
         // from user input
 
         int cnt = 3;

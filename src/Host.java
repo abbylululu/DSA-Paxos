@@ -4,10 +4,7 @@ import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -104,11 +101,9 @@ public class Host {
         // Create send socket by end port number
         DatagramSocket sendSocket = new DatagramSocket(Integer.parseInt(curEndPort));
 
-        // Construct current site(work as proposer, acceptor, learner simultaneously)
-        ReservationSys mySite = new ReservationSys(sitesInfo, uid, sendSocket, proposerQueue);
-
         new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
         new Learner(learnerQueue).start();
+        Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
 //==================================================================================================
         // FIXME: separate directory and project structure
         // Restore when site crashes
@@ -127,26 +122,45 @@ public class Host {
 
             if (input[0].equals("reserve")) {// insert into my site, update timetable, log and dictionary
                 // TODO: how to handle conflicted reserve?
-                int res = mySite.insert(input);
-                if ( res == 0 || res == -1) {
+                // process input
+                Reservation newResv = processInput(input);
+                // learn hole
+                learnHole(proposer);
+                // detect conflict
+                assert newResv != null;
+                if(isConflict(newResv.getFlights())) {
+                    System.out.println("Conflict reservation for " + input[1] + ".");
+                }
+                // choose a slot to propose
+                int logSlot = chooseSlot();
+                boolean res = proposer.startSynod(logSlot, newResv.flatten());
+                if (!res) {
                     System.out.println("Cannot schedule reservation for " + input[1] + ".");
                 } else {
                     System.out.println("Reservation submitted for " + input[1] + ".");
                 }
 
             } else if (input[0].equals("cancel")) {// delete from my site's dictionary, update log and timetable
-                int result = mySite.delete(input);
-                if (result == 1) {
+                // learn hole
+                learnHole(proposer);
+                // check if previously deleted
+                if(prevDel(commandLine)) {
+                    System.out.println("previously deleted cancel for " + input[1] + ".");
+                }
+                // choose a slot to propose
+                int logSlot = chooseSlot();
+                boolean res = proposer.startSynod(logSlot, commandLine);
+                if (res) {
                     System.out.println("Reservation for " + input[1] + " cancelled.");
-                } else  {// 0 or -1
+                } else {
                     System.out.println("Cannot cancel reservation for " + input[1] + ".");
                 }
 
             } else if (input[0].equals("view")) {// Print dictionary here
-                mySite.printDictionary();
+                printDictionary();
 
             } else if (input[0].equals("log")) {// Print log here
-                mySite.printLog();
+                printLog();
 
             } else if (input[0].equals("quit")) {
                 System.exit(0);
@@ -158,4 +172,96 @@ public class Host {
     }
 
     //==================================================================================================
+    public static int chooseSlot() {
+        int maxSlot = -1;
+        for(Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
+            maxSlot = Math.max(maxSlot, mapElement.getKey());
+        }
+        if (maxSlot == 0) return maxSlot;
+        else return maxSlot + 1;
+    }
+
+
+    // FIXME: learn hole failed
+    public static void learnHole(Proposer proposer) {
+        int slot = chooseSlot();
+        for (int i = 0; i < slot; i++) {
+            String curLog = Learner.log.get(i);
+            if (curLog == null) {
+                proposer.startSynod(i, "");
+            }
+        }
+    }
+
+
+    public static boolean isConflict(ArrayList<Integer> flights) {
+        // keep track of reserved flights in dict, mapping flight number to count
+        HashMap<Integer, Integer> ReservedFlights = new HashMap<>();
+        if (Learner.dictionary.isEmpty()) return false;
+        for (int i = 0; i < Learner.dictionary.size(); i++) {
+            ArrayList<Integer> curLocalReservedFlights = Learner.dictionary.get(i).getFlights();
+            for (int j = 0; j < curLocalReservedFlights.size(); j++) {
+                Integer curFlight = curLocalReservedFlights.get(j);
+                if (ReservedFlights.containsKey(curFlight)) {
+                    Integer curCnt = ReservedFlights.get(curFlight);
+                    ReservedFlights.put(curFlight, curCnt + 1);
+                } else {
+                    ReservedFlights.put(curFlight, 1);
+                }
+            }
+        }
+
+        for (int i = 0; i < flights.size(); i++) {
+            if (ReservedFlights.containsKey(flights.get(i)) && ReservedFlights.get(flights.get(i)) == 2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public static Reservation processInput(String[] input) {
+        String clientName = input[1];
+        // reserve
+        if (input.length == 3) {
+            String[] parsedFlights = input[2].split(",");
+            ArrayList<Integer> newFlights = new ArrayList<>();
+            for(int i = 0; i < parsedFlights.length; i++) {
+                newFlights.add(Integer.parseInt(parsedFlights[i]));
+            }
+            return new Reservation("reserve", clientName, newFlights);
+        }
+        // cancel
+        else if (input.length == 2) {
+            return new Reservation("cancel", clientName, new ArrayList<>());
+        }
+        return null;
+    }
+
+
+    public static boolean prevDel(String newCancel) {
+        for (Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
+            if (newCancel.equals(mapElement.getValue())) {
+                // cancel request failed
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public static void printDictionary() {
+        ArrayList<Reservation> newDict = Learner.dictionary;
+        for (int i = 0; i < newDict.size(); i++) {
+            newDict.sort(new CustomComparator());
+            System.out.println(newDict.get(i).flatten());
+        }
+    }
+
+
+    public static void printLog() {
+        for (int i = 0; i < Learner.log.size(); i++) {
+            System.out.println(Learner.log.get(i));
+        }
+    }
 }
