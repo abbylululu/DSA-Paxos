@@ -42,9 +42,20 @@ public class Learner extends Thread{
         }
     }
 
-//    public boolean checkBack(Reservation newRecord) {
-//
-//    }
+    public boolean checkBack(Reservation newRecord, Integer logSlot) {
+        Integer maxLogNum = getMaxLogSlot();
+        for (int i = logSlot; i <= maxLogNum; i++) {
+            if (log.containsKey(i)) {
+                Reservation compare = log.get(i);
+                if (newRecord.getOperation().equals("reserve") && compare.getOperation().equals("cancel") &&
+                newRecord.getClientName().equals(compare.getClientName())) return true;
+
+                if (newRecord.getOperation().equals("cancel") && compare.getOperation().equals("reserve") &&
+                newRecord.getClientName().equals(compare.getClientName())) return true;
+            }
+        }
+        return false;
+    }
 
     // message form: commit accVal logSlot senderIP
     public void recvCommit(String message) throws IOException {
@@ -69,7 +80,7 @@ public class Learner extends Thread{
             record.setPrintString(accVal.trim());
             addLog(Integer.parseInt(logSlot), record, this.proposer);// update log
         }
-
+        if (checkBack(record, Integer.parseInt(logSlot))) return;
         if (operation.equals("reserve")) {
             boolean add = true;
             for (int i = 0; i < Learner.dictionary.size(); i++) {

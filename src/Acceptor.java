@@ -206,7 +206,10 @@ public class Acceptor extends Thread {
     // @From: Acceptor(current)
     // @To: Proposer
     public void sendAck(String senderIP, Integer logSlot) throws IOException {
-        String ackMsg = "ack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + Host.curIp;
+        if (!proposerIp.containsKey(logSlot)) {
+            proposerIp.put(logSlot, senderIP);
+        }
+        String ackMsg = "ack " + Integer.toString(this.maxPrepare.get(logSlot)) + " " + proposerIp.get(logSlot);
         acceptorSend(senderIP, ackMsg);
         System.err.println("Acceptor<" + Host.curSiteId + "> sends ack(" +
                 Integer.toString(this.maxPrepare.get(logSlot))  +") to " + ipToID(senderIP));
@@ -216,9 +219,6 @@ public class Acceptor extends Thread {
     // @To: Distinguished Learner
     // The proposer that proposed this proposal is the DL
     public void sendAccepted(String senderIP, Integer logSlot) throws IOException {
-        if (!proposerIp.containsKey(logSlot)) {
-            proposerIp.put(logSlot, senderIP);
-        }
         String acceptedMsg = "accepted " + Integer.toString(this.accNum.get(logSlot)) + " "
                 + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + Host.curIp;
         acceptorSend(senderIP, acceptedMsg);
