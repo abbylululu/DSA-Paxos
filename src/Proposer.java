@@ -39,7 +39,7 @@ public class Proposer {
         String maxVal = null;
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < 10000) {
+        while ((System.currentTimeMillis() - startTime) < 5000) {
             String curMsg = (String) this.proposerQueue.poll();
             if (curMsg == null) continue;
 
@@ -81,7 +81,7 @@ public class Proposer {
 
         sendAccept(this.currentProposalNumber, this.currentProposalVal);
         long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < 10000) {
+        while ((System.currentTimeMillis() - startTime) < 5000) {
             String curMsg = (String) this.proposerQueue.poll();
             if (curMsg == null) continue;
 
