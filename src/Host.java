@@ -270,13 +270,13 @@ public class Host {
 
 
     public static void printLog() {
-        for (int i = 0; i < Learner.log.size(); i++) {
-            if (Learner.log.get(i).getOperation().equals("reserve")){
-                System.out.println(Learner.log.get(i).getOperation() + " "
-                        + Learner.log.get(i).getClientName() + " " + Learner.log.get(i).getPrintFlight());
-            }
-            else if (Learner.log.get(i).getOperation().equals("cancel")) {
-                System.out.println(Learner.log.get(i).getOperation() + " " + Learner.log.get(i).getClientName());
+        for(Map.Entry<Integer,Reservation> entry : Learner.log.entrySet()) {
+            Reservation value = entry.getValue();
+            if (value.getOperation().equals("reserve")) {
+                System.out.println(value.getOperation() + " "
+                        + value.getClientName() + " " + value.getPrintFlight());
+            } else {
+                System.out.println(value.getOperation() + " " + value.getClientName());
             }
         }
     }
