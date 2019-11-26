@@ -103,8 +103,8 @@ public class Host {
         DatagramSocket sendSocket = new DatagramSocket(sendPort);
 
         new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
-        new Learner(learnerQueue).start();
         Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
+        new Learner(learnerQueue, proposer).start();
 //==================================================================================================
         // TODO: store and recover log
         // Restore when site crashes
@@ -190,9 +190,7 @@ public class Host {
             return 0;
         }
         int maxSlot = -1;
-        for(Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
-            maxSlot = Math.max(maxSlot, mapElement.getKey());
-        }
+        maxSlot = Learner.getMaxLogSlot();
         return maxSlot + 1;
     }
 
@@ -201,7 +199,7 @@ public class Host {
     public static void learnHole(Proposer proposer) {
         int slot = chooseSlot();
         for (int i = 0; i < slot; i++) {
-            String curLog = Learner.log.get(i);
+            Reservation curLog = Learner.log.get(i);
             if (curLog == null) {
                 proposer.startSynod(i, "");
             }
@@ -251,9 +249,9 @@ public class Host {
 
 
     public static boolean prevDel(String newCancel) {
-        for (Map.Entry<Integer, String> mapElement: Learner.log.entrySet()) {
+        for (Map.Entry<Integer, Reservation> mapElement: Learner.log.entrySet()) {
 //            System.out.println("***equal?" + mapElement.getValue().trim().equals(newCancel));
-            if (newCancel.equals(mapElement.getValue())) {
+            if (newCancel.equals(mapElement.getValue().flatten())) {
                 return true;
             }
         }
@@ -272,12 +270,12 @@ public class Host {
 
     public static void printLog() {
         for (int i = 0; i < Learner.log.size(); i++) {
-            Reservation curLog = new Reservation(Learner.log.get(i));
-            if (curLog.getOperation().equals("reserve")){
-                System.out.println(curLog.getOperation() + " " + curLog.getClientName() + " " + curLog.getPrintFlight());
+            if (Learner.log.get(i).getOperation().equals("reserve")){
+                System.out.println(Learner.log.get(i).getOperation() + " "
+                        + Learner.log.get(i).getClientName() + " " + Learner.log.get(i).getPrintFlight());
             }
-            else if (curLog.getOperation().equals("cancel")) {
-                System.out.println(curLog.getOperation() + " " + curLog.getClientName());
+            else if (Learner.log.get(i).getOperation().equals("cancel")) {
+                System.out.println(Learner.log.get(i).getOperation() + " " + Learner.log.get(i).getClientName());
             }
         }
     }
@@ -285,11 +283,13 @@ public class Host {
     public static boolean optimization(String curIp, int curLogSlot) {
         if (curLogSlot < 1) return false;
         int prevLogSlot = curLogSlot - 1;
-        String prevIp = (new Reservation(Learner.log.get(prevLogSlot))).getProposerIp();
+        String prevIp = (Learner.log.get(prevLogSlot)).getProposerIp();
         // FIXME: proposal number 0?
         if (prevIp.equals(curIp)) {
             return true;
         }
         return false;
     }
+
+
 }

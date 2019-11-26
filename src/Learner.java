@@ -1,16 +1,19 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
 public class Learner extends Thread{
-    private BlockingQueue learnerQueue = null;
+    private BlockingQueue<String> learnerQueue = null;
     static ArrayList<Reservation> dictionary; // local reservation data structure
-    static HashMap<Integer, String> log; // array of reservation string(ops clientName 1 2 3), in stable storage
+    static HashMap<Integer, Reservation> log; // array of reservation string(ops clientName 1 2 3), in stable storage
+    private Proposer proposer = null;
 
-    public Learner(BlockingQueue learnerQueue) {
+    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer) {
         this.learnerQueue = learnerQueue;
         dictionary = new ArrayList<>();
         log = new HashMap<>();
+        this.proposer = proposer;
     }
 
     public void run() {
@@ -43,7 +46,9 @@ public class Learner extends Thread{
             flights.add(Integer.parseInt(splitted[i]));
         }
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
-            Learner.log.put(Integer.parseInt(logSlot), accVal.toString().trim());// update log
+            Reservation logRecord = new Reservation(operation, clientName, splitted[msgLen - 1], flights);
+            logRecord.setPrintString(accVal.toString().trim());
+            addLog(Integer.parseInt(logSlot), logRecord, this.proposer);// update log
         }
 
         if (operation.equals("reserve")) {
@@ -66,5 +71,23 @@ public class Learner extends Thread{
                 }
             }
         }
+    }
+
+
+    public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) {
+        Integer curMax = getMaxLogSlot();
+        if (curMax / 5 != logSlot / 5) {// learn hole
+            Host.learnHole(proposer);
+        }
+        Learner.log.put(logSlot, logRecord);
+    }
+
+    public static Integer getMaxLogSlot() {
+        Set<Integer> logSlot= Learner.log.keySet();
+        Integer maxLog = 0;
+        for (Integer num: logSlot) {
+            if (num > maxLog) maxLog = num;
+        }
+        return maxLog;
     }
 }
