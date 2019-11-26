@@ -1,10 +1,7 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class Learner extends Thread{
@@ -18,23 +15,16 @@ public class Learner extends Thread{
         this.proposer = proposer;
         dictionary = new ArrayList<>();
         log = new TreeMap<>();
-//        File logFile = new File("log.txt");
-//        File dictFile = new File("dictionary.txt");
-//        if (dictFile.exists()) {
-//            recoverDict();
-//        }
-//        if (logFile.exists()) {
-//            recoverLog();
-//        }
+        File logFile = new File("log.txt");
+        File dictFile = new File("dictionary.txt");
+        if (dictFile.exists()) {
+            recoverDict();
+        }
+        if (logFile.exists()) {
+            recoverLog();
+        }
+        replay();
     }
-
-//    public Integer findLastCheck() {
-//
-//    }
-//
-//    public void replay() {
-//        Integer startPoint = findLastCheck();
-//    }
 
     public void run() {
         while (true) {
@@ -96,6 +86,48 @@ public class Learner extends Thread{
             }
         }
     }
+
+    public Integer findLastCheck() {
+        for(Map.Entry<Integer,Reservation> entry : Learner.log.descendingMap().entrySet()) {
+            Reservation value = entry.getValue();
+            if (value.isCheckPoint()) {
+                return entry.getKey();
+            }
+        }
+        return -1;// shouldn't be here
+    }
+
+    public void replay() {
+        if (Learner.log.isEmpty()) return;
+        Integer startPoint = findLastCheck();
+        Integer maxPoint = getMaxLogSlot();
+        // Replay log from startPoint to maxPoint
+        for (int i = startPoint; i <= maxPoint; i++) {
+            if (Learner.log.containsKey(i)) {
+                if (Learner.log.get(i).getOperation().equals("reserve")) {// add
+                    boolean add = true;
+                    for (int j = 0; j < Learner.dictionary.size(); j++) {
+                        if (Learner.dictionary.get(j).flatten().equals(Learner.log.get(i).flatten())) {
+                            add = false;
+                        }
+                    }
+                    if (add) {
+                        Learner.dictionary.add(Learner.log.get(i));
+                    }
+
+                } else {// cancel
+                    for (int j = 0; j < Learner.dictionary.size();) {
+                        if (Learner.dictionary.get(j).getClientName().equals(Learner.log.get(i))) {
+                            Learner.dictionary.remove(Learner.dictionary.get(i));
+                        } else {
+                            j++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
 
     public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) throws IOException {

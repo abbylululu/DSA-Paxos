@@ -29,10 +29,10 @@ public class Acceptor extends Thread {
         this.maxPrepare = new TreeMap<>();
         this.accNum = new TreeMap<>();
         this.accVal = new TreeMap<>();
-//        File acceptorFile = new File("acceptor.txt");
-//        if (acceptorFile.exists()) {
-//            recoverAcceptor();
-//        }
+        File acceptorFile = new File("acceptor.txt");
+        if (acceptorFile.exists()) {
+            recoverAcceptor();
+        }
         this.receiveSocket = receiveSocket;
         this.sendSocket = sendSocket;
         this.running = true;
