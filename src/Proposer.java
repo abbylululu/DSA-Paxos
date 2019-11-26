@@ -197,7 +197,7 @@ public class Proposer {
         }
 
 //        System.err.println("sending prepare(" + this.current_proposal_number + ")to all sites");
-        System.out.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends prepare(" + this.currentProposalNumber + ")to all sites");
+        System.err.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends prepare(" + this.currentProposalNumber + ")to all sites");
     }
 
 
@@ -239,7 +239,7 @@ public class Proposer {
         }
 
 //        System.err.println("sending accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
-        System.out.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
+        System.err.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
     }
 
 
@@ -254,6 +254,6 @@ public class Proposer {
         }
 
 //        System.err.println("sending commit ('" + accVal + "')to all sites");
-        System.out.println("Distinguished Learner<" + this.sitesInfo.get(uid).get("siteId") + "> sends commit ('" + accVal + "')to all sites");
+        System.err.println("Distinguished Learner<" + this.sitesInfo.get(uid).get("siteId") + "> sends commit ('" + accVal + "')to all sites");
     }
 }

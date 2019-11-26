@@ -115,7 +115,7 @@ public class Host {
 
         // main thread keeps receiving msgs from user at this site
         while (true) {
-            System.out.println("[test]Please enter the command: ");
+            //System.out.println("[test]Please enter the command: ");
             Scanner in = new Scanner(System.in);
             String commandLine = in.nextLine();
             String[] input = commandLine.split("\\s+");
@@ -129,7 +129,7 @@ public class Host {
                 // detect conflict
                 assert newResv != null;
                 if(isConflict(newResv.getFlights())) {
-                    System.out.println("Conflict reservation for " + input[1] + ".");
+                    System.err.println("Conflict reservation for " + input[1] + ".");
                     continue;
                 }
                 // choose a slot to propose
@@ -152,7 +152,7 @@ public class Host {
                 learnHole(proposer);
                 // check if previously deleted
                 if(prevDel(commandLine)) {
-                    System.out.println("previously deleted cancel for " + input[1] + ".");
+                    System.err.println("previously deleted cancel for " + input[1] + ".");
                     continue;
                 }
                 // choose a slot to propose

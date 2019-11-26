@@ -124,7 +124,7 @@ public class Acceptor extends Thread {
                 }
 
             } else {
-                System.out.println("[test]Oops, wrong msg!");
+                //System.out.println("[test]Oops, wrong msg!");
             }
 
             this.buffer = new byte[65535];//reset
