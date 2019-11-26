@@ -3,7 +3,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
@@ -12,6 +11,7 @@ public class Acceptor extends Thread {
     private TreeMap<Integer, Integer> maxPrepare;//log_slot to maxPrepare
     private TreeMap<Integer, Integer> accNum;
     private TreeMap<Integer, String> accVal;
+    public static TreeMap<Integer, String> proposerIp;
     private DatagramSocket receiveSocket;
     private DatagramSocket sendSocket;
     private boolean running;
@@ -27,6 +27,7 @@ public class Acceptor extends Thread {
         this.maxPrepare = new TreeMap<>();
         this.accNum = new TreeMap<>();
         this.accVal = new TreeMap<>();
+        proposerIp = new TreeMap<>();
         File acceptorFile = new File(Host.curSiteId +"acceptor.txt");
         if (acceptorFile.exists()) {
             recoverAcceptor();
@@ -72,7 +73,7 @@ public class Acceptor extends Thread {
             }
             // parse the string
             assert recvMessage != null;
-            System.out.println("+++[test] " + Host.curSiteId + " receives =>" + recvMessage);
+            //System.out.println("+++[test] " + Host.curSiteId + " receives =>" + recvMessage);
             String[] getCommand = recvMessage.split(" ");//prepare
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
@@ -215,6 +216,9 @@ public class Acceptor extends Thread {
     // @To: Distinguished Learner
     // The proposer that proposed this proposal is the DL
     public void sendAccepted(String senderIP, Integer logSlot) throws IOException {
+        if (!proposerIp.containsKey(logSlot)) {
+            proposerIp.put(logSlot, senderIP);
+        }
         String acceptedMsg = "accepted " + Integer.toString(this.accNum.get(logSlot)) + " "
                 + this.accVal.get(logSlot) + " " + Integer.toString(logSlot) + " " + Host.curIp;
         acceptorSend(senderIP, acceptedMsg);

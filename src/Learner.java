@@ -42,6 +42,10 @@ public class Learner extends Thread{
         }
     }
 
+//    public boolean checkBack(Reservation newRecord) {
+//
+//    }
+
     // message form: commit accVal logSlot senderIP
     public void recvCommit(String message) throws IOException {
         // parse the received message
@@ -60,7 +64,7 @@ public class Learner extends Thread{
             accVal += splitted[i] + " ";
             flights.add(Integer.parseInt(splitted[i]));
         }
-        Reservation record = new Reservation(operation.trim(), clientName.trim(), splitted[msgLen - 1].trim(), flights);
+        Reservation record = new Reservation(operation.trim(), clientName.trim(), flights);
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
             record.setPrintString(accVal.trim());
             addLog(Integer.parseInt(logSlot), record, this.proposer);// update log

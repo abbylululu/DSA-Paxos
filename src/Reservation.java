@@ -7,16 +7,16 @@ public class Reservation implements Serializable {
     private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
-    private String proposerIp;
+//    private String proposerIp;
     private boolean isCheckPoint;
     private String printString;
 
     // CONSTRUCTOR
-    Reservation(String operation, String clientName, String proposerIp, ArrayList<Integer> flights) {
+    Reservation(String operation, String clientName, ArrayList<Integer> flights) {
         this.operation = operation;
         this.clientName = clientName;
         this.flights = flights;
-        this.proposerIp = proposerIp;
+//        this.proposerIp = proposerIp;
         this.isCheckPoint = false;
         this.printString = null;
     }
@@ -66,9 +66,9 @@ public class Reservation implements Serializable {
         return this.printString;
     }
 
-    public String getProposerIp() {
-        return this.proposerIp;
-    }
+//    public String getProposerIp() {
+//        return this.proposerIp;
+//    }
 
     public String getOperation() {
         return this.operation;
@@ -94,9 +94,9 @@ public class Reservation implements Serializable {
         this.operation = operation;
     }
 
-    public void setProposerIp(String proposerIp) {
-        this.proposerIp = proposerIp;
-    }
+//    public void setProposerIp(String proposerIp) {
+//        this.proposerIp = proposerIp;
+//    }
 
     public void setCheckPoint(boolean checkPoint) {
         this.isCheckPoint = checkPoint;
