@@ -47,7 +47,7 @@ public class Learner extends Thread{
         }
 
         if (operation.equals("reserve")) {
-            Reservation record = new Reservation(operation, clientName, flights);
+            Reservation record = new Reservation(operation, clientName, splitted[msgLen - 1], flights);
             boolean add = true;
             for (int i = 0; i < Learner.dictionary.size(); i++) {
                 if (Learner.dictionary.get(i).flatten().equals(record.flatten())) {

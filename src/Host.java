@@ -123,7 +123,7 @@ public class Host {
             if (input[0].equals("reserve")) {
                 if (input.length != 3) continue;
                 // process input
-                Reservation newResv = processInput(input);
+                Reservation newResv = processInput(input, curIp);
                 // learn hole
                 learnHole(proposer);
                 // detect conflict
@@ -225,7 +225,7 @@ public class Host {
     }
 
 
-    public static Reservation processInput(String[] input) {
+    public static Reservation processInput(String[] input, String proposerIp) {
         String clientName = input[1];
         // reserve
         if (input.length == 3) {
@@ -234,7 +234,7 @@ public class Host {
             for(int i = 0; i < parsedFlights.length; i++) {
                 newFlights.add(Integer.parseInt(parsedFlights[i]));
             }
-            return new Reservation("reserve", clientName, newFlights);
+            return new Reservation("reserve", clientName, proposerIp, newFlights);
         }
         return null;
     }

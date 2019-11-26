@@ -6,12 +6,14 @@ public class Reservation {
     private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
+    private String propserIp;
 
     // CONSTRUCTOR
-    Reservation(String operation, String clientName, ArrayList<Integer> flights) {
+    Reservation(String operation, String clientName, String propserIp, ArrayList<Integer> flights) {
         this.operation = operation;
         this.clientName = clientName;
         this.flights = flights;
+        this.propserIp = propserIp;
     }
 
 //    // accVal format: operation clientName flights
@@ -50,6 +52,11 @@ public class Reservation {
     }
 
     // GETTERS and SETTERS
+
+    public String getPropserIp() {
+        return this.propserIp;
+    }
+
     public String getOperation() {
         return this.operation;
     }
