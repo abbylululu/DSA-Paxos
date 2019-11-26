@@ -9,6 +9,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class Host {
+    public static String curSiteId;
+    public static String curStartPort;
+    public static String curEndPort;
+    public static String curIp;
+
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
@@ -68,10 +73,10 @@ public class Host {
         String id = args[0];
 
         // find current site info
-        String curSiteId = "";
-        String curStartPort = "";
-        String curEndPort = "";
-        String curIp = "";
+        curSiteId = "";
+        curStartPort = "";
+        curEndPort = "";
+        curIp = "";
 
         InetAddress inetAddress = InetAddress.getLocalHost();
         curIp = inetAddress.getHostAddress();
@@ -102,7 +107,7 @@ public class Host {
         DatagramSocket receiveSocket = new DatagramSocket(receivePort);
         DatagramSocket sendSocket = new DatagramSocket(sendPort);
 
-        new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo, curSiteId, curIp).start();// child thread go here
+        new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo).start();// child thread go here
         Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
         new Learner(learnerQueue, proposer).start();
 //==================================================================================================
@@ -132,6 +137,7 @@ public class Host {
                     System.err.println("Conflict reservation for " + input[1] + ".");
                     continue;
                 }
+                System.out.println("=================finished fill hole");
                 // choose a slot to propose
                 int logSlot = chooseSlot();
                 boolean res;

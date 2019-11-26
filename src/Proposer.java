@@ -52,7 +52,7 @@ public class Proposer {
                         Map.Entry<Integer, String> accEntry = mapElement.getValue();
                         int curAccNum = accEntry.getKey();
                         String curAccString = accEntry.getValue();
-                        if (curAccNum > maxAccNum) {
+                        if (curAccNum > maxAccNum && curAccString != null) {
                             maxVal = curAccString;
 
                             System.out.println("****now maxVal becomes: " + maxVal);

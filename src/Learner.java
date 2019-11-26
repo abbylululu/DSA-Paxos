@@ -15,8 +15,8 @@ public class Learner extends Thread{
         this.proposer = proposer;
         dictionary = new ArrayList<>();
         log = new TreeMap<>();
-        File logFile = new File("log.txt");
-        File dictFile = new File("dictionary.txt");
+        File logFile = new File(Host.curSiteId + "log.txt");
+        File dictFile = new File(Host.curSiteId +"dictionary.txt");
         if (dictFile.exists()) {
             recoverDict();
         }
@@ -49,33 +49,24 @@ public class Learner extends Thread{
         //
         String[] splitted = message.split(" ");
         int msgLen = splitted.length;
-        String accNum = splitted[1];
-        String logSlot = splitted[msgLen - 2];
-        String operation = splitted[2];
-        String clientName = splitted[3];
+        String accNum = splitted[1].trim();
+        String logSlot = splitted[msgLen - 2].trim();
+        String operation = splitted[2].trim();
+        String clientName = splitted[3].trim();
+        String sendIp = splitted[msgLen - 1].trim();
         ArrayList<Integer> flights = new ArrayList<>();
         String accVal = operation + " " + clientName + " ";
         for (int i = 4; i < msgLen - 2; i++) {
             accVal += splitted[i] + " ";
             flights.add(Integer.parseInt(splitted[i]));
         }
+        Reservation record = new Reservation(operation.trim(), clientName.trim(), splitted[msgLen - 1].trim(), flights);
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
-            Reservation logRecord = new Reservation(operation.trim(), clientName.trim(), splitted[msgLen - 1].trim(), flights);
-            logRecord.setPrintString(accVal.toString().trim());
-            boolean flag = true;
-            for (Map.Entry<Integer, Reservation> entry : Learner.log.entrySet()) {
-                Reservation value = entry.getValue();
-                if (logRecord.getOperation().equals(value.getOperation()) &&
-                        logRecord.getOperation().equals(value.getClientName()) &&
-                        logRecord.getPrintFlight().equals(value.getPrintFlight())) {
-                    flag = false;
-                }
-            }
-            if (flag) addLog(Integer.parseInt(logSlot), logRecord, this.proposer);// update log
+            record.setPrintString(accVal.trim());
+            addLog(Integer.parseInt(logSlot), record, this.proposer);// update log
         }
 
         if (operation.equals("reserve")) {
-            Reservation record = new Reservation(operation, clientName, splitted[msgLen - 1], flights);
             boolean add = true;
             for (int i = 0; i < Learner.dictionary.size(); i++) {
                 if (Learner.dictionary.get(i).flatten().equals(record.flatten())) {
@@ -95,6 +86,7 @@ public class Learner extends Thread{
             }
         }
     }
+
 
     public Integer findLastCheck() {
         for(Map.Entry<Integer,Reservation> entry : Learner.log.descendingMap().entrySet()) {
@@ -126,7 +118,7 @@ public class Learner extends Thread{
 
                 } else {// cancel
                     for (int j = 0; j < Learner.dictionary.size();) {
-                        if (Learner.dictionary.get(j).getClientName().equals(Learner.log.get(i))) {
+                        if (Learner.dictionary.get(j).getClientName().equals(Learner.log.get(i).getClientName())) {
                             Learner.dictionary.remove(Learner.dictionary.get(i));
                         } else {
                             j++;
@@ -136,13 +128,11 @@ public class Learner extends Thread{
             }
         }
     }
-
-
+    
 
     public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) throws IOException {
         Integer curMax = getMaxLogSlot();
         if (curMax / 5 != logSlot / 5) {// learn hole
-            System.out.println("***learning holes?");
             Host.learnHole(proposer);
         }
         if (logSlot % 5 == 0) logRecord.setCheckPoint(true);
@@ -163,7 +153,7 @@ public class Learner extends Thread{
 
     public static void storeLog() throws IOException {
         byte[] output = Send.serialize(log);
-        File file = new File("log.txt");
+        File file = new File(Host.curSiteId + "log.txt");
         FileOutputStream fos = null;
         fos = new FileOutputStream(file);
         fos.write(output);
@@ -172,7 +162,7 @@ public class Learner extends Thread{
 
     public static void storeDict() throws IOException {
         byte[] output = Send.serialize(dictionary);
-        File file = new File("dictionary.txt");
+        File file = new File(Host.curSiteId +"dictionary.txt");
         FileOutputStream fos = null;
         fos = new FileOutputStream(file);
         fos.write(output);
@@ -183,14 +173,14 @@ public class Learner extends Thread{
     private void recoverLog() throws IOException, ClassNotFoundException {
         @SuppressWarnings (value="unchecked")
         TreeMap<Integer, Reservation> recoverLog =
-                (TreeMap<Integer, Reservation>)Acceptor.deserialize(Acceptor.readFromFile("log.txt"));
+                (TreeMap<Integer, Reservation>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"log.txt"));
         Learner.log = recoverLog;
     }
 
     private void recoverDict() throws IOException, ClassNotFoundException {
         @SuppressWarnings (value="unchecked")
         ArrayList<Reservation> recoverDict =
-                (ArrayList<Reservation>)Acceptor.deserialize(Acceptor.readFromFile("dictionary.txt"));
+                (ArrayList<Reservation>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"dictionary.txt"));
         Learner.dictionary = recoverDict;
     }
 }
