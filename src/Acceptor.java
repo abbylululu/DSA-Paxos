@@ -19,6 +19,7 @@ public class Acceptor extends Thread {
     private ArrayList<HashMap<String, String>> sitesInfo;
     private BlockingQueue<String> proposerQueue = null;
     private BlockingQueue<String> learnerQueue = null;
+    public static TreeMap<String, String> findIP;
 
 
 
@@ -28,6 +29,7 @@ public class Acceptor extends Thread {
         this.accNum = new TreeMap<>();
         this.accVal = new TreeMap<>();
         proposerIp = new TreeMap<>();
+        findIP = new TreeMap<>();
         File acceptorFile = new File(Host.curSiteId +"acceptor.txt");
         if (acceptorFile.exists()) {
             recoverAcceptor();
@@ -98,6 +100,9 @@ public class Acceptor extends Thread {
                     try {
                         System.err.println("Acceptor<" + Host.curSiteId + "> received "+ recvMessage
                                 +" from " + ipToID(senderIp));
+                        if (!findIP.containsKey(getCommand[3])) {
+                            findIP.put(getCommand[3], senderIp);
+                        }
                         if (getCommand[2].equals("cancel")) {
                             recvAccept(Integer.parseInt(getCommand[1]), getCommand[2] + " " + getCommand[3],
                                     senderIp, Integer.parseInt(getCommand[4]));
