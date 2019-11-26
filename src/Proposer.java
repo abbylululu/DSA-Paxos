@@ -12,12 +12,12 @@ public class Proposer {
     private DatagramSocket sendSocket; // send
     private BlockingQueue<String> proposerQueue; // receive
 
-    private int current_proposal_number;
-    private int current_log_slot;
-    private String current_proposal_val; // from user input
+    private int currentProposalNumber;
+    private int currentLogSlot;
+    private String currentProposalVal; // from user input
 
-    private HashMap<String, Map.Entry<Integer, String>> promise_queues;
-    private int ack_counter;
+    private HashMap<String, Map.Entry<Integer, String>> promiseQueue;
+    private int ackCounter;
 
     // ------------------CONSTRUCTOR------------------ //
 
@@ -27,7 +27,7 @@ public class Proposer {
         this.sitesInfo = sitesInfo;
         this.sendSocket = sendSocket;
         this.proposerQueue = blocking_queue;
-        this.promise_queues = new HashMap<>();
+        this.promiseQueue = new HashMap<>();
     }
 
     // ------------------HELPER------------------ //
@@ -48,9 +48,9 @@ public class Proposer {
             String[] splitted = curMsg.split(" ");
             if (splitted[0].equals("promise")) {
                 recvPromise(curMsg);
-                int numPromise = this.promise_queues.size();
+                int numPromise = this.promiseQueue.size();
                 if (numPromise >= majority) {
-                    for (Map.Entry<String, Map.Entry<Integer, String>> mapElement : this.promise_queues.entrySet()) {
+                    for (Map.Entry<String, Map.Entry<Integer, String>> mapElement : this.promiseQueue.entrySet()) {
                         Map.Entry<Integer, String> accEntry = mapElement.getValue();
                         int curAccNum = accEntry.getKey();
                         String curAccString = accEntry.getValue();
@@ -59,7 +59,7 @@ public class Proposer {
                         }
                     }
                     if (maxVal != null) {
-                        this.current_proposal_val = maxVal;
+                        this.currentProposalVal = maxVal;
                     }
                     return true;
                 }
@@ -73,15 +73,15 @@ public class Proposer {
     }
 
     public void reset() {
-        this.promise_queues.clear();
-        this.ack_counter = 0;
+        this.promiseQueue.clear();
+        this.ackCounter = 0;
     }
 
 
     public boolean synodPhase2() {
         int majority = this.majority();
 
-        sendAccept(this.current_proposal_number, this.current_proposal_val);
+        sendAccept(this.currentProposalNumber, this.currentProposalVal);
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < 10000) {
             String curMsg = (String) this.proposerQueue.poll();
@@ -89,9 +89,9 @@ public class Proposer {
 
             String[] splitted = curMsg.split(" ");
             if (splitted[0].equals("ack")) {
-                this.ack_counter++;
+                this.ackCounter++;
 
-                if (this.ack_counter >= majority) {
+                if (this.ackCounter >= majority) {
                     return true;
                 }
             }
@@ -105,8 +105,8 @@ public class Proposer {
 
 
     public boolean startSynod(Integer logSlot, String val) {
-        this.current_log_slot = logSlot;
-        this.current_proposal_val = val;
+        this.currentLogSlot = logSlot;
+        this.currentProposalVal = val;
 
         // from user input
 
@@ -126,9 +126,9 @@ public class Proposer {
         if (cnt <= 0) return false;
 
         // commit
-        sendCommit(this.current_proposal_number, this.current_proposal_val);
+        sendCommit(this.currentProposalNumber, this.currentProposalVal);
 
-        return this.current_proposal_val.equals(val);
+        return this.currentProposalVal.equals(val);
     }
 
 
@@ -141,14 +141,14 @@ public class Proposer {
 
     public void sendPrepare() {
         // increment the proposal number
-        this.current_proposal_number += this.sitesInfo.size();
+        this.currentProposalNumber += this.sitesInfo.size();
 
         // generate message for sending: "prepare curPropNum log_slot"
         StringBuilder sb = new StringBuilder();
         sb.append("prepare ");
-        sb.append(this.current_proposal_number);
+        sb.append(this.currentProposalNumber);
         sb.append(" ");
-        sb.append(this.current_log_slot);
+        sb.append(this.currentLogSlot);
 
         // send prepare to all sites
         for (int i = 0; i < this.sitesInfo.size(); i++) {
@@ -158,7 +158,7 @@ public class Proposer {
         }
 
 //        System.err.println("sending prepare(" + this.current_proposal_number + ")to all sites");
-        System.out.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends prepare(" + this.current_proposal_number + ")to all sites");
+        System.out.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends prepare(" + this.currentProposalNumber + ")to all sites");
     }
 
 
@@ -176,7 +176,7 @@ public class Proposer {
         // store in my promise queue for current log slot
         // promise queues: slot_queue(siteIp -> pair(accNum, accVal)
         Map.Entry<Integer, String> recvAccs = new AbstractMap.SimpleEntry<Integer, String>(accNum, accVal);
-        this.promise_queues.put(sender_ip, recvAccs);
+        this.promiseQueue.put(sender_ip, recvAccs);
     }
 
 
@@ -184,12 +184,12 @@ public class Proposer {
         // parse the received message
         String[] splitted = message.split(" ");
         int recvMaxNum = Integer.parseInt(splitted[1]);
-        this.current_proposal_number = Math.max(recvMaxNum, this.current_proposal_number);
+        this.currentProposalNumber = Math.max(recvMaxNum, this.currentProposalNumber);
     }
 
     public void sendAccept(int proposalNumber, String proposalVal) {
         String msg = String.format("accept %d %s %d", proposalNumber,
-                proposalVal, this.current_log_slot);
+                proposalVal, this.currentLogSlot);
 
 //        System.out.println("****accept from apple is: " + msg);
 
@@ -206,7 +206,7 @@ public class Proposer {
 
     public void sendCommit(int accNum, String accVal) {
         String msg = String.format("commit %d %s %d %s", accNum, accVal,
-                this.current_log_slot, this.sitesInfo.get(uid).get("ip"));
+                this.currentLogSlot, this.sitesInfo.get(uid).get("ip"));
 
         for (int i = 0; i < this.sitesInfo.size(); i++) {
             String recvIp = this.sitesInfo.get(i).get("ip");
