@@ -7,7 +7,7 @@ public class Reservation implements Serializable {
     private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
-//    private String proposerIp;
+    private String proposerIp;
     private boolean isCheckPoint;
     private String printString;
 
@@ -16,7 +16,7 @@ public class Reservation implements Serializable {
         this.operation = operation;
         this.clientName = clientName;
         this.flights = flights;
-//        this.proposerIp = proposerIp;
+        this.proposerIp = proposerIp;
         this.isCheckPoint = false;
         this.printString = null;
     }
@@ -94,9 +94,9 @@ public class Reservation implements Serializable {
         this.operation = operation;
     }
 
-//    public void setProposerIp(String proposerIp) {
-//        this.proposerIp = proposerIp;
-//    }
+    public void setProposerIp(String proposerIp) {
+        this.proposerIp = proposerIp;
+    }
 
     public void setCheckPoint(boolean checkPoint) {
         this.isCheckPoint = checkPoint;

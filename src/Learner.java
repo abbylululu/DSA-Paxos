@@ -6,6 +6,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class Learner extends Thread{
     private BlockingQueue<String> learnerQueue = null;
+    private static ArrayList<Reservation> checkPointDictionary;
     static ArrayList<Reservation> dictionary; // local reservation data structure
     static TreeMap<Integer, Reservation> log; // array of reservation string(ops clientName 1 2 3), in stable storage
     private Proposer proposer = null;
@@ -13,6 +14,7 @@ public class Learner extends Thread{
     public Learner(BlockingQueue<String> learnerQueue, Proposer proposer) throws IOException, ClassNotFoundException {
         this.learnerQueue = learnerQueue;
         this.proposer = proposer;
+        checkPointDictionary = new ArrayList<>();
         dictionary = new ArrayList<>();
         log = new TreeMap<>();
         File logFile = new File(Host.curSiteId + "log.txt");
@@ -76,6 +78,7 @@ public class Learner extends Thread{
             flights.add(Integer.parseInt(splitted[i]));
         }
         Reservation record = new Reservation(operation.trim(), clientName.trim(), flights);
+        record.setProposerIp(Acceptor.proposerIp.get(Integer.parseInt(logSlot)));
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
             record.setPrintString(accVal.trim());
             addLog(Integer.parseInt(logSlot), record, this.proposer);// update log
@@ -176,7 +179,7 @@ public class Learner extends Thread{
     }
 
     public static void storeDict() throws IOException {
-        byte[] output = Send.serialize(dictionary);
+        byte[] output = Send.serialize(checkPointDictionary);
         File file = new File(Host.curSiteId +"dictionary.txt");
         FileOutputStream fos = null;
         fos = new FileOutputStream(file);
