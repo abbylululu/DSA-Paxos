@@ -6,14 +6,18 @@ public class Reservation {
     private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
-    private String propserIp;
+    private String proposerIp;
+    private boolean isCheckPoint;
+    private String printString;
 
     // CONSTRUCTOR
-    Reservation(String operation, String clientName, String propserIp, ArrayList<Integer> flights) {
+    Reservation(String operation, String clientName, String proposerIp, ArrayList<Integer> flights) {
         this.operation = operation;
         this.clientName = clientName;
         this.flights = flights;
-        this.propserIp = propserIp;
+        this.proposerIp = proposerIp;
+        this.isCheckPoint = false;
+        this.printString = null;
     }
 
     // accVal format: operation clientName flights
@@ -53,8 +57,16 @@ public class Reservation {
 
     // GETTERS and SETTERS
 
-    public String getPropserIp() {
-        return this.propserIp;
+    public boolean isCheckPoint() {
+        return this.isCheckPoint;
+    }
+
+    public String getPrintString() {
+        return this.printString;
+    }
+
+    public String getProposerIp() {
+        return this.proposerIp;
     }
 
     public String getOperation() {
@@ -75,6 +87,22 @@ public class Reservation {
 
     public void setFlights(ArrayList<Integer> flights) {
         this.flights = flights;
+    }
+
+    public void setOperation(String operation) {
+        this.operation = operation;
+    }
+
+    public void setProposerIp(String proposerIp) {
+        this.proposerIp = proposerIp;
+    }
+
+    public void setCheckPoint(boolean checkPoint) {
+        this.isCheckPoint = checkPoint;
+    }
+
+    public void setPrintString(String printString) {
+        this.printString = printString;
     }
 }
 
