@@ -262,7 +262,13 @@ public class Host {
 
     public static void printLog() {
         for (int i = 0; i < Learner.log.size(); i++) {
-            System.out.println(Learner.log.get(i));
+            Reservation curLog = new Reservation(Learner.log.get(i));
+            if (curLog.getOperation().equals("reserve")){
+                System.out.println(curLog.getOperation() + " " + curLog.getClientName() + " " + curLog.getPrintFlight());
+            }
+            else if (curLog.getOperation().equals("cancel")) {
+                System.out.println(curLog.getOperation() + " " + curLog.getClientName());
+            }
         }
     }
 }
