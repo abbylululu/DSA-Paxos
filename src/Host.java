@@ -146,6 +146,7 @@ public class Host {
                     System.out.println("Reservation submitted for " + input[1] + ".");
                 }
 
+
             } else if (input[0].equals("cancel")) {
                 if (input.length != 2) continue;
                 // learn hole

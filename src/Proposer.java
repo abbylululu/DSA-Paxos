@@ -10,7 +10,7 @@ public class Proposer {
     private BlockingQueue<String> proposerQueue; // receive
 
     private int currentProposalNumber;
-    private int currentLogSlot;
+    private int currentLogSlot; // from user input
     private String currentProposalVal; // from user input
 
     private TreeMap<String, Map.Entry<Integer, String>> promiseQueue;
@@ -125,6 +125,8 @@ public class Proposer {
         // commit
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
 
+        // reset proposal number
+        this.currentProposalNumber = this.uid;
         return this.currentProposalVal.equals(val);
     }
 
@@ -166,6 +168,8 @@ public class Proposer {
 
         // commit
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
+        // reset proposal number
+        this.currentProposalNumber = this.uid;
 
         return this.currentProposalVal.equals(val);
     }
