@@ -10,7 +10,7 @@ public class Proposer {
     private int uid;
     private ArrayList<HashMap<String, String>> sitesInfo;
     private DatagramSocket sendSocket; // send
-    private BlockingQueue<String> blocking_queue; // receive
+    private BlockingQueue<String> proposerQueue; // receive
 
     private int current_proposal_number;
     private int current_log_slot;
@@ -26,7 +26,7 @@ public class Proposer {
         this.uid = uid;
         this.sitesInfo = sitesInfo;
         this.sendSocket = sendSocket;
-        this.blocking_queue = blocking_queue;
+        this.proposerQueue = blocking_queue;
         this.promise_queues = new HashMap<>();
     }
 
@@ -42,7 +42,7 @@ public class Proposer {
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < 10000) {
-            String curMsg = (String) this.blocking_queue.poll();
+            String curMsg = (String) this.proposerQueue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -84,7 +84,7 @@ public class Proposer {
         sendAccept(this.current_proposal_number, this.current_proposal_val);
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < 10000) {
-            String curMsg = (String) this.blocking_queue.poll();
+            String curMsg = (String) this.proposerQueue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
