@@ -60,9 +60,18 @@ public class Learner extends Thread{
             flights.add(Integer.parseInt(splitted[i]));
         }
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
-            Reservation logRecord = new Reservation(operation, clientName, splitted[msgLen - 1], flights);
+            Reservation logRecord = new Reservation(operation.trim(), clientName.trim(), splitted[msgLen - 1].trim(), flights);
             logRecord.setPrintString(accVal.toString().trim());
-            addLog(Integer.parseInt(logSlot), logRecord, this.proposer);// update log
+            boolean flag = true;
+            for (Map.Entry<Integer, Reservation> entry : Learner.log.entrySet()) {
+                Reservation value = entry.getValue();
+                if (logRecord.getOperation().equals(value.getOperation()) &&
+                        logRecord.getOperation().equals(value.getClientName()) &&
+                        logRecord.getPrintFlight().equals(value.getPrintFlight())) {
+                    flag = false;
+                }
+            }
+            if (flag) addLog(Integer.parseInt(logSlot), logRecord, this.proposer);// update log
         }
 
         if (operation.equals("reserve")) {
