@@ -292,6 +292,9 @@ public class Host {
         if (Acceptor.proposerIp.containsKey(prevLogSlot)) {
             String prevIp = Acceptor.proposerIp.get(prevLogSlot);
             if (prevIp.equals(curIp)) {
+
+                System.out.println("@@@@start optimized algo b/c prevIp is: " + prevIp);
+
                 return true;
             }
         }

@@ -110,6 +110,8 @@ public class Proposer {
         this.currentProposalNumber = this.uid;
 
         // from user input
+        System.out.println("****propose for log slot: " + this.currentLogSlot +
+                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
 
         int cnt = 3;
         while (cnt > 0) {
@@ -124,11 +126,16 @@ public class Proposer {
             break;
         }
 
-        if (cnt <= 0) return false;
+        if (cnt <= 0) {
+            System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
+                    " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+            return false;
+        }
 
         // commit
+        System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
+                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
-        System.out.println("*****current proposal value becomes: " + this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
 
@@ -137,6 +144,9 @@ public class Proposer {
         this.currentLogSlot = logSlot;
         this.currentProposalVal = val;
         this.currentProposalNumber = 0;
+
+        System.out.println("****propose for log slot: " + this.currentLogSlot +
+                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
 
         if (synodPhase2()) {
             // commit
@@ -157,9 +167,15 @@ public class Proposer {
             break;
         }
 
-        if (cnt <= 0) return false;
+        if (cnt <= 0) {
+            System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
+                    " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+            return false;
+        }
 
         // commit
+        System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
+                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
