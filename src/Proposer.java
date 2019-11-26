@@ -1,8 +1,5 @@
 import java.net.DatagramSocket;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class Proposer {
@@ -16,7 +13,7 @@ public class Proposer {
     private int currentLogSlot;
     private String currentProposalVal; // from user input
 
-    private HashMap<String, Map.Entry<Integer, String>> promiseQueue;
+    private TreeMap<String, Map.Entry<Integer, String>> promiseQueue;
     private int ackCounter;
 
     // ------------------CONSTRUCTOR------------------ //
@@ -27,7 +24,7 @@ public class Proposer {
         this.sitesInfo = sitesInfo;
         this.sendSocket = sendSocket;
         this.proposerQueue = blocking_queue;
-        this.promiseQueue = new HashMap<>();
+        this.promiseQueue = new TreeMap<>();
     }
 
     // ------------------HELPER------------------ //
