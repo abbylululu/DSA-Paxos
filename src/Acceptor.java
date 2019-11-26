@@ -138,15 +138,6 @@ public class Acceptor extends Thread {
         return objStream.readObject();
     }
 
-    // Serialize the CommunicateInfo to byte array
-    public static byte[] serialize(Object obj) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(obj);
-        oos.flush();
-        return bos.toByteArray();
-    }
-
     // @From: Proposer
     // @To: Acceptor(current)
     public void recvPrepare(Integer n, String senderIP, Integer logSlot) throws IOException {
@@ -200,7 +191,7 @@ public class Acceptor extends Thread {
     // @From: Acceptor(current)
     // @To: Proposer
     public void sendNack(String senderIP, Integer logSlot) throws IOException {
-        String maxNum = "null";
+        String maxNum = "0";
         if (this.maxPrepare.containsKey(logSlot)) {
             maxNum = Integer.toString(this.maxPrepare.get(logSlot));
         }
@@ -233,7 +224,7 @@ public class Acceptor extends Thread {
 
     public void acceptorSend(String senderIP, String message) throws IOException {
         InetAddress targetIP = InetAddress.getByName(senderIP);
-        byte[] sendArray = serialize(message);
+        byte[] sendArray = Send.serialize(message);
         String receivePort = null;
         for (int j = 0; j < this.sitesInfo.size(); j++) {
             if (this.sitesInfo.get(j).get("ip").equals(senderIP)) {
@@ -248,7 +239,7 @@ public class Acceptor extends Thread {
 
     private void recordAcceptor() throws IOException {
         Record log = new Record(this.maxPrepare, this.accNum, this.accVal);
-        byte[] output = serialize(log);
+        byte[] output = Send.serialize(log);
         File file = new File("acceptor.txt");
         FileOutputStream fos = null;
         fos = new FileOutputStream(file);
