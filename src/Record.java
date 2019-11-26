@@ -10,12 +10,15 @@ public class Record implements Serializable {
     private TreeMap<Integer, Integer> accNum;
     private TreeMap<Integer, String> accVal;
     private TreeMap<Integer, String> proposerIp;
+    private TreeMap<String, String> findIP;
 
-    public Record(TreeMap<Integer, Integer> maxPrepare, TreeMap<Integer, Integer> accNum, TreeMap<Integer, String> accVal, TreeMap<Integer, String> proposerIp) {
+    public Record(TreeMap<Integer, Integer> maxPrepare, TreeMap<Integer, Integer> accNum,
+                  TreeMap<Integer, String> accVal, TreeMap<Integer, String> proposerIp, TreeMap<String, String> findIP) {
         this.maxPrepare = maxPrepare;
         this.accNum = accNum;
         this.accVal = accVal;
         this.proposerIp = proposerIp;
+        this.findIP = findIP;
     }
 
     public TreeMap<Integer, Integer> getMaxPrepare() {
@@ -32,5 +35,9 @@ public class Record implements Serializable {
 
     public TreeMap<Integer, String> getProposerIp() {
         return proposerIp;
+    }
+
+    public TreeMap<String, String> getFindIP() {
+        return findIP;
     }
 }

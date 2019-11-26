@@ -248,7 +248,7 @@ public class Acceptor extends Thread {
     }
 
     private void recordAcceptor() throws IOException {
-        Record log = new Record(this.maxPrepare, this.accNum, this.accVal, proposerIp);
+        Record log = new Record(this.maxPrepare, this.accNum, this.accVal, proposerIp, findIP);
         byte[] output = Send.serialize(log);
         File file = new File(Host.curSiteId +"acceptor.txt");
         FileOutputStream fos = null;
@@ -263,6 +263,7 @@ public class Acceptor extends Thread {
         this.accNum = recover.getAccNum();
         this.accVal = recover.getAccVal();
         proposerIp = recover.getProposerIp();
+        findIP = recover.getFindIP();
     }
 
     public static byte[] readFromFile(String fileName) throws IOException {
