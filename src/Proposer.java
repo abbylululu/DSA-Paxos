@@ -23,6 +23,7 @@ public class Proposer {
         this.uid = uid;
         this.sitesInfo = sitesInfo;
         this.sendSocket = sendSocket;
+        this.currentProposalNumber = uid;
         this.proposerQueue = blocking_queue;
         this.promiseQueue = new TreeMap<>();
     }
@@ -104,6 +105,7 @@ public class Proposer {
     public boolean startSynod(Integer logSlot, String val) {
         this.currentLogSlot = logSlot;
         this.currentProposalVal = val;
+        this.currentProposalNumber = this.uid;
 
         // from user input
 
@@ -124,9 +126,6 @@ public class Proposer {
 
         // commit
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
-
-        // reset proposal number
-        this.currentProposalNumber = this.uid;
         return this.currentProposalVal.equals(val);
     }
 
@@ -134,24 +133,15 @@ public class Proposer {
     public boolean startOptimizedSynod(Integer logSlot, String val) {
         this.currentLogSlot = logSlot;
         this.currentProposalVal = val;
+        this.currentProposalNumber = 0;
 
-        int cnt = 3;
-        while (cnt > 0) {
-            if (!synodPhase2()) {
-                cnt--;
-                continue;
-            }
-            break;
-        }
-
-        if (cnt > 0) {
+        if (synodPhase2()) {
             // commit
             sendCommit(this.currentProposalNumber, this.currentProposalVal);
-
             return this.currentProposalVal.equals(val);
         }
 
-        cnt = 2;
+        int cnt = 2;
         while (cnt > 0) {
             if (!synodPhase1()) {
                 cnt--;
@@ -168,9 +158,6 @@ public class Proposer {
 
         // commit
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
-        // reset proposal number
-        this.currentProposalNumber = this.uid;
-
         return this.currentProposalVal.equals(val);
     }
 

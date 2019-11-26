@@ -285,7 +285,6 @@ public class Host {
         if (curLogSlot < 1) return false;
         int prevLogSlot = curLogSlot - 1;
         String prevIp = (Learner.log.get(prevLogSlot)).getProposerIp();
-        // FIXME: proposal number 0?
         if (prevIp.equals(curIp)) {
             return true;
         }
