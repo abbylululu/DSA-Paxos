@@ -134,7 +134,12 @@ public class Host {
                 }
                 // choose a slot to propose
                 int logSlot = chooseSlot();
-                boolean res = proposer.startSynod(logSlot, newResv.flatten());
+                boolean res = false;
+                if (optimization(curIp, logSlot)) {// 1 phase
+
+                } else {// 2 phases
+                    res = proposer.startSynod(logSlot, newResv.flatten());
+                }
                 if (!res) {
                     System.out.println("Cannot schedule reservation for " + input[1] + ".");
                 } else {
@@ -270,5 +275,11 @@ public class Host {
                 System.out.println(curLog.getOperation() + " " + curLog.getClientName());
             }
         }
+    }
+
+    public static boolean optimization(String curIp, int curLogSlot) {
+        if (curLogSlot < 1) return false;
+        // TODO： Check the previous logslot of log
+        return false;
     }
 }
