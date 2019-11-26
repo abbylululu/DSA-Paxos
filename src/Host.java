@@ -134,9 +134,9 @@ public class Host {
                 }
                 // choose a slot to propose
                 int logSlot = chooseSlot();
-                boolean res = false;
+                boolean res;
                 if (optimization(curIp, logSlot)) {// 1 phase
-
+                    res = proposer.startOptimizedSynod(logSlot, newResv.flatten());
                 } else {// 2 phases
                     res = proposer.startSynod(logSlot, newResv.flatten());
                 }
@@ -157,7 +157,12 @@ public class Host {
                 }
                 // choose a slot to propose
                 int logSlot = chooseSlot();
-                boolean res = proposer.startSynod(logSlot, commandLine);
+                boolean res;
+                if (optimization(curIp, logSlot)) {// 1 phase
+                    res = proposer.startOptimizedSynod(logSlot, commandLine);
+                } else {// 2 phases
+                    res = proposer.startSynod(logSlot, commandLine);
+                }
                 if (res) {
                     System.out.println("Reservation for " + input[1] + " cancelled.");
                 } else {
@@ -279,7 +284,12 @@ public class Host {
 
     public static boolean optimization(String curIp, int curLogSlot) {
         if (curLogSlot < 1) return false;
-        // TODO： Check the previous logslot of log
+        int prevLogSlot = curLogSlot - 1;
+        String prevIp = (new Reservation(Learner.log.get(prevLogSlot))).getProposerIp();
+        // FIXME: proposal number 0?
+        if (prevIp.equals(curIp)) {
+            return true;
+        }
         return false;
     }
 }

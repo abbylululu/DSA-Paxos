@@ -111,7 +111,49 @@ public class Proposer {
         // from user input
 
         int cnt = 3;
-        while(cnt > 0) {
+        while (cnt > 0) {
+            if (!synodPhase1()) {
+                cnt--;
+                continue;
+            }
+            if(!synodPhase2()) {
+                cnt--;
+                continue;
+            }
+            break;
+        }
+
+        if (cnt <= 0) return false;
+
+        // commit
+        sendCommit(this.currentProposalNumber, this.currentProposalVal);
+
+        return this.currentProposalVal.equals(val);
+    }
+
+
+    public boolean startOptimizedSynod(Integer logSlot, String val) {
+        this.currentLogSlot = logSlot;
+        this.currentProposalVal = val;
+
+        int cnt = 3;
+        while (cnt > 0) {
+            if (!synodPhase2()) {
+                cnt--;
+                continue;
+            }
+            break;
+        }
+
+        if (cnt > 0) {
+            // commit
+            sendCommit(this.currentProposalNumber, this.currentProposalVal);
+
+            return this.currentProposalVal.equals(val);
+        }
+
+        cnt = 2;
+        while (cnt > 0) {
             if (!synodPhase1()) {
                 cnt--;
                 continue;
