@@ -159,6 +159,9 @@ public class Acceptor extends Thread {
     // @To: Acceptor(current)
     // ToDo: check null pointer
     public void recvAccept(Integer n, String v, String senderIP, Integer logSlot) throws IOException {
+        System.out.println("~~~acNum is =>" + n);
+        System.out.println("~~~acVal is =>" + v);
+        System.out.println("~~~logSLot is =>" + logSlot);
         if (!this.maxPrepare.containsKey(logSlot)) this.maxPrepare.put(logSlot, 0);
         if (this.maxPrepare.containsKey(logSlot) && n >= this.maxPrepare.get(logSlot)) {
             this.accNum.put(logSlot, n);

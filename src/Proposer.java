@@ -54,6 +54,8 @@ public class Proposer {
                         String curAccString = accEntry.getValue();
                         if (curAccNum > maxAccNum) {
                             maxVal = curAccString;
+
+                            System.out.println("****now maxVal becomes: " + maxVal);
                         }
                     }
                     if (maxVal != null) {
@@ -126,6 +128,7 @@ public class Proposer {
 
         // commit
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
+        System.out.println("*****current proposal value becomes: " + this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
 
@@ -199,9 +202,15 @@ public class Proposer {
         String accVal = null;
         if (!splitted[1].equals("null")) {
             accNum = Integer.parseInt(splitted[1]);
-            accVal = splitted[2];
+            accVal = "";
+            for (int i = 2; i < splitted.length - 2; i++) {
+                accVal = accVal + splitted[i] + " ";
+            }
+            accVal = accVal.trim();
+
+            System.out.println("???am I idiot? :" + accVal);
         }
-        String sender_ip = splitted[4];
+        String sender_ip = splitted[splitted.length - 1];
 
         // store in my promise queue for current log slot
         // promise queues: slot_queue(siteIp -> pair(accNum, accVal)

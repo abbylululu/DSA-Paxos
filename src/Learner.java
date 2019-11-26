@@ -133,6 +133,7 @@ public class Learner extends Thread{
     public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) throws IOException {
         Integer curMax = getMaxLogSlot();
         if (curMax / 5 != logSlot / 5) {// learn hole
+            System.out.println("***learning holes?");
             Host.learnHole(proposer);
         }
         if (logSlot % 5 == 0) logRecord.setCheckPoint(true);
