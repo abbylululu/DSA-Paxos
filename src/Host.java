@@ -129,6 +129,8 @@ public class Host {
                 if (input.length != 3) continue;
                 // process input
                 Reservation newResv = processInput(input, curIp);
+                System.out.println("&&&" + newResv.getClientName());
+                System.out.println("&&&" + newResv.flatten());
                 // learn hole
                 learnHole(proposer);
                 // detect conflict
@@ -137,7 +139,8 @@ public class Host {
                     System.err.println("Conflict reservation for " + input[1] + ".");
                     continue;
                 }
-                System.out.println("=================finished fill hole");
+                System.out.println("$$$ Proposal number " + proposer.getCurrentProposalNumber());
+                System.out.println("$$$ Proposal val " + proposer.getCurrentProposalVal());
                 // choose a slot to propose
                 int logSlot = chooseSlot();
                 boolean res;

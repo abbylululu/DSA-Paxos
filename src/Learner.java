@@ -119,7 +119,7 @@ public class Learner extends Thread{
                 } else {// cancel
                     for (int j = 0; j < Learner.dictionary.size();) {
                         if (Learner.dictionary.get(j).getClientName().equals(Learner.log.get(i).getClientName())) {
-                            Learner.dictionary.remove(Learner.dictionary.get(i));
+                            Learner.dictionary.remove(Learner.dictionary.get(j));
                         } else {
                             j++;
                         }

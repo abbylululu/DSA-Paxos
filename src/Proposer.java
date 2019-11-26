@@ -171,6 +171,29 @@ public class Proposer {
         return majority;
     }
 
+    public int getCurrentProposalNumber() {
+        return currentProposalNumber;
+    }
+
+    public void setCurrentProposalNumber(int currentProposalNumber) {
+        this.currentProposalNumber = currentProposalNumber;
+    }
+
+    public int getCurrentLogSlot() {
+        return currentLogSlot;
+    }
+
+    public void setCurrentLogSlot(int currentLogSlot) {
+        this.currentLogSlot = currentLogSlot;
+    }
+
+    public String getCurrentProposalVal() {
+        return currentProposalVal;
+    }
+
+    public void setCurrentProposalVal(String currentProposalVal) {
+        this.currentProposalVal = currentProposalVal;
+    }
 
     public void sendPrepare() {
         // increment the proposal number
