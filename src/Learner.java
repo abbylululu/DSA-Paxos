@@ -1,20 +1,40 @@
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 
 public class Learner extends Thread{
     private BlockingQueue<String> learnerQueue = null;
     static ArrayList<Reservation> dictionary; // local reservation data structure
-    static HashMap<Integer, Reservation> log; // array of reservation string(ops clientName 1 2 3), in stable storage
+    static TreeMap<Integer, Reservation> log; // array of reservation string(ops clientName 1 2 3), in stable storage
     private Proposer proposer = null;
 
-    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer) {
+    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer) throws IOException, ClassNotFoundException {
         this.learnerQueue = learnerQueue;
-        dictionary = new ArrayList<>();
-        log = new HashMap<>();
         this.proposer = proposer;
+        dictionary = new ArrayList<>();
+        log = new TreeMap<>();
+//        File logFile = new File("log.txt");
+//        File dictFile = new File("dictionary.txt");
+//        if (dictFile.exists()) {
+//            recoverDict();
+//        }
+//        if (logFile.exists()) {
+//            recoverLog();
+//        }
     }
+
+//    public Integer findLastCheck() {
+//
+//    }
+//
+//    public void replay() {
+//        Integer startPoint = findLastCheck();
+//    }
 
     public void run() {
         while (true) {
@@ -23,13 +43,17 @@ public class Learner extends Thread{
 
             String[] splitted = curMsg.split(" ");
             if (splitted[0].equals("commit")) {
-                recvCommit(curMsg);
+                try {
+                    recvCommit(curMsg);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
     // message form: commit accVal logSlot senderIP
-    public void recvCommit(String message) {
+    public void recvCommit(String message) throws IOException {
         // parse the received message
         //"commit accNum accVal logSlot senderIP"
         //
@@ -74,12 +98,15 @@ public class Learner extends Thread{
     }
 
 
-    public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) {
+    public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) throws IOException {
         Integer curMax = getMaxLogSlot();
         if (curMax / 5 != logSlot / 5) {// learn hole
             Host.learnHole(proposer);
         }
+        if (logSlot % 5 == 0) logRecord.setCheckPoint(true);
         Learner.log.put(logSlot, logRecord);
+        storeLog();
+        if (logSlot % 5 == 0) storeDict();
     }
 
     public static Integer getMaxLogSlot() {
@@ -89,5 +116,39 @@ public class Learner extends Thread{
             if (num > maxLog) maxLog = num;
         }
         return maxLog;
+    }
+
+
+    public static void storeLog() throws IOException {
+        byte[] output = Send.serialize(log);
+        File file = new File("log.txt");
+        FileOutputStream fos = null;
+        fos = new FileOutputStream(file);
+        fos.write(output);
+        fos.close();
+    }
+
+    public static void storeDict() throws IOException {
+        byte[] output = Send.serialize(dictionary);
+        File file = new File("dictionary.txt");
+        FileOutputStream fos = null;
+        fos = new FileOutputStream(file);
+        fos.write(output);
+        fos.close();
+    }
+
+
+    private void recoverLog() throws IOException, ClassNotFoundException {
+        @SuppressWarnings (value="unchecked")
+        TreeMap<Integer, Reservation> recoverLog =
+                (TreeMap<Integer, Reservation>)Acceptor.deserialize(Acceptor.readFromFile("log.txt"));
+        Learner.log = recoverLog;
+    }
+
+    private void recoverDict() throws IOException, ClassNotFoundException {
+        @SuppressWarnings (value="unchecked")
+        ArrayList<Reservation> recoverDict =
+                (ArrayList<Reservation>)Acceptor.deserialize(Acceptor.readFromFile("dictionary.txt"));
+        Learner.dictionary = recoverDict;
     }
 }

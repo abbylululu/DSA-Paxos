@@ -4,27 +4,28 @@
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Record implements Serializable {
-    private HashMap<Integer, Integer> maxPrepare;//log_slot to maxPrepare
-    private HashMap<Integer, Integer> accNum;
-    private HashMap<Integer, String> accVal;
+    private TreeMap<Integer, Integer> maxPrepare;//log_slot to maxPrepare
+    private TreeMap<Integer, Integer> accNum;
+    private TreeMap<Integer, String> accVal;
 
-    public Record(HashMap<Integer, Integer> maxPrepare, HashMap<Integer, Integer> accNum, HashMap<Integer, String> accVal) {
+    public Record(TreeMap<Integer, Integer> maxPrepare, TreeMap<Integer, Integer> accNum, TreeMap<Integer, String> accVal) {
         this.maxPrepare = maxPrepare;
         this.accNum = accNum;
         this.accVal = accVal;
     }
 
-    public HashMap<Integer, Integer> getMaxPrepare() {
+    public TreeMap<Integer, Integer> getMaxPrepare() {
         return maxPrepare;
     }
 
-    public HashMap<Integer, Integer> getAccNum() {
+    public TreeMap<Integer, Integer> getAccNum() {
         return accNum;
     }
 
-    public HashMap<Integer, String> getAccVal() {
+    public TreeMap<Integer, String> getAccVal() {
         return accVal;
     }
 }

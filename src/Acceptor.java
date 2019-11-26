@@ -5,12 +5,13 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 
 public class Acceptor extends Thread {
-    private HashMap<Integer, Integer> maxPrepare;//log_slot to maxPrepare
-    private HashMap<Integer, Integer> accNum;
-    private HashMap<Integer, String> accVal;
+    private TreeMap<Integer, Integer> maxPrepare;//log_slot to maxPrepare
+    private TreeMap<Integer, Integer> accNum;
+    private TreeMap<Integer, String> accVal;
     private DatagramSocket receiveSocket;
     private DatagramSocket sendSocket;
     private boolean running;
@@ -25,9 +26,9 @@ public class Acceptor extends Thread {
 
     public Acceptor(BlockingQueue<String> proposerQueue, BlockingQueue<String> learnerQueue, DatagramSocket receiveSocket, DatagramSocket sendSocket,
                     ArrayList<HashMap<String, String>> sitesInfo, String siteId, String siteIp) throws IOException, ClassNotFoundException {
-        this.maxPrepare = new HashMap<>();
-        this.accNum = new HashMap<>();
-        this.accVal = new HashMap<>();
+        this.maxPrepare = new TreeMap<>();
+        this.accNum = new TreeMap<>();
+        this.accVal = new TreeMap<>();
 //        File acceptorFile = new File("acceptor.txt");
 //        if (acceptorFile.exists()) {
 //            recoverAcceptor();
@@ -248,14 +249,14 @@ public class Acceptor extends Thread {
     }
 
     private void recoverAcceptor() throws IOException, ClassNotFoundException {
-        Record recover = (Record)deserialize(readFromFile());
+        Record recover = (Record)deserialize(readFromFile("acceptor.txt"));
         this.maxPrepare = recover.getMaxPrepare();
         this.accNum = recover.getAccNum();
         this.accVal = recover.getAccVal();
     }
 
-    public byte[] readFromFile() throws IOException {
-        File file = new File("acceptor.txt");
+    public static byte[] readFromFile(String fileName) throws IOException {
+        File file = new File(fileName);
         byte[] getBytes = {};
         getBytes = new byte[(int) file.length()];
         InputStream is = new FileInputStream(file);

@@ -1,8 +1,9 @@
+import java.io.Serializable;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-public class Reservation {
+public class Reservation implements Serializable {
     private String operation;
     private String clientName;
     private ArrayList<Integer> flights;
