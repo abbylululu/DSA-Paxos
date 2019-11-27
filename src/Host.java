@@ -109,7 +109,7 @@ public class Host {
 
         new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo).start();// child thread go here
         Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
-        new Learner(learnerQueue, proposer).start();
+        new Learner(learnerQueue, proposer, sitesInfo, sendSocket).start();
 //==================================================================================================
         // TODO: store and recover log
         // Restore when site crashes
@@ -202,11 +202,21 @@ public class Host {
 
 
     // FIXME: learn hole failed
-    public static void learnHole(Proposer proposer) {
+    public static void learnHole(Proposer proposer) throws IOException {
         int slot = chooseSlot();
         for (int i = 0; i < slot; i++) {
             Reservation curLog = Learner.log.get(i);
             if (curLog == null) {
+                proposer.startSynod(i, "");
+            }
+        }
+    }
+
+    public static void learnBackHole(Proposer proposer, Integer maxSlot) throws IOException {
+        int slot = chooseSlot();
+        int index = maxSlot > slot ? maxSlot : slot;
+        for (int i = 0; i <= index; i++) {
+            if (!Learner.log.containsKey(i) || Learner.log.get(i) == null) {
                 proposer.startSynod(i, "");
             }
         }

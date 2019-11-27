@@ -1,24 +1,37 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class Learner extends Thread{
+    private ArrayList<HashMap<String, String>> sitesInfo;
     private BlockingQueue<String> learnerQueue = null;
     private static ArrayList<Reservation> checkPointDictionary;
     static ArrayList<Reservation> dictionary; // local reservation data structure
     static TreeMap<Integer, Reservation> log; // array of reservation string(ops clientName 1 2 3), in stable storage
     private Proposer proposer = null;
+    private DatagramSocket sendSocket;
+    public static Integer newMax;
 
-    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer) throws IOException, ClassNotFoundException {
+    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer,ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket) throws IOException, ClassNotFoundException {
         this.learnerQueue = learnerQueue;
+        this.sitesInfo = sitesInfo;
         this.proposer = proposer;
+        this.sendSocket = sendSocket;
         checkPointDictionary = new ArrayList<>();
         dictionary = new ArrayList<>();
         log = new TreeMap<>();
+        newMax = -1;
         File logFile = new File(Host.curSiteId + "log.txt");
         File dictFile = new File(Host.curSiteId +"dictionary.txt");
+        String askMax = "MaximumLog";
+        for (int i = 0; i < this.sitesInfo.size(); i++) {
+            String recvIp = this.sitesInfo.get(i).get("ip");
+            Send ask = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, askMax);
+            ask.start();
+        }
         if (dictFile.exists()) {
             recoverDict();
         }
@@ -40,6 +53,9 @@ public class Learner extends Thread{
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else if (splitted[0].equals("Max")) {
+                //System.out.println("%%%%#####Recive ask max " + splitted[1]);
+//                this.newMax = Integer.parseInt(splitted[1]) > this.newMax ? Integer.parseInt(splitted[1]) : this.newMax;
             }
         }
     }
@@ -83,7 +99,7 @@ public class Learner extends Thread{
             record.setPrintString(accVal.trim());
             addLog(Integer.parseInt(logSlot), record, this.proposer);// update log
         }
-        if (checkBack(record, Integer.parseInt(logSlot))) return;
+        //if (checkBack(record, Integer.parseInt(logSlot))) return;
         if (operation.equals("reserve")) {
             boolean add = true;
             for (int i = 0; i < Learner.dictionary.size(); i++) {
@@ -193,6 +209,12 @@ public class Learner extends Thread{
         TreeMap<Integer, Reservation> recoverLog =
                 (TreeMap<Integer, Reservation>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"log.txt"));
         Learner.log = recoverLog;
+        while (newMax == -1) {
+            continue;
+//            System.out.println("&&^$$$ new max is " + newMax);
+        }
+        Host.learnBackHole(this.proposer, newMax);
+        newMax = -1;
     }
 
     private void recoverDict() throws IOException, ClassNotFoundException {

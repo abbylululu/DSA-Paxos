@@ -56,7 +56,7 @@ public class Proposer {
                         if (curAccNum > maxAccNum && curAccString != null) {
                             maxVal = curAccString;
 
-                            System.out.println("****now maxVal becomes: " + maxVal);
+                            //System.out.println("****now maxVal becomes: " + maxVal);
                         }
                     }
                     if (maxVal != null) {
@@ -131,14 +131,14 @@ public class Proposer {
         }
 
         if (cnt <= 0) {
-            System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
-                    " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+            //System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
+                    //" with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
             return false;
         }
 
         // commit
-        System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
-                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+        //System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
+         //       " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
@@ -173,14 +173,14 @@ public class Proposer {
         }
 
         if (cnt <= 0) {
-            System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
-                    " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+            //System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
+              //      " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
             return false;
         }
 
         // commit
-        System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
-                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+        //System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
+         //       " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
@@ -282,7 +282,7 @@ public class Proposer {
 
 //        System.err.println("sending accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
         System.err.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
-        Host.sendLastSeen(sendSocket);
+//        Host.sendLastSeen(sendSocket);
     }
 
 
@@ -298,6 +298,6 @@ public class Proposer {
 
 //        System.err.println("sending commit ('" + accVal + "')to all sites");
         System.err.println("Distinguished Learner<" + this.sitesInfo.get(uid).get("siteId") + "> sends commit ('" + accVal + "')to all sites");
-        Host.sendLastSeen(sendSocket);
+//        Host.sendLastSeen(sendSocket);
     }
 }
