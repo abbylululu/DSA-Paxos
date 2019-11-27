@@ -140,7 +140,7 @@ public class Host {
                 learnHole(proposer);
                 // detect conflict
                 assert newResv != null;
-                if(isConflict(newResv.getFlights())) {
+                if(isConflict(newResv.getFlights()) || isConflictName(newResv.getClientName())) {
                     System.err.println("Conflict reservation for " + input[1] + ".");
                     continue;
                 }
@@ -228,6 +228,8 @@ public class Host {
 
     public static void learnBackHole(Proposer proposer, Integer maxSlot) throws IOException {
         int slot = chooseSlot();
+        int curMax = Learner.getMaxLogSlot();
+        if (curMax == maxSlot) return;// no need to learn
         int index = maxSlot > slot ? maxSlot : slot;
         for (int i = 0; i <= index; i++) {
             if (!Learner.log.containsKey(i) || Learner.log.get(i) == null) {
@@ -256,6 +258,16 @@ public class Host {
 
         for (int i = 0; i < flights.size(); i++) {
             if (ReservedFlights.containsKey(flights.get(i)) && ReservedFlights.get(flights.get(i)) == 2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isConflictName(String clientName) {
+        if (Learner.dictionary.isEmpty()) return false;
+        for (int i = 0; i < Learner.dictionary.size(); i++) {
+            if (Learner.dictionary.get(i).getClientName().equals(clientName)) {
                 return true;
             }
         }

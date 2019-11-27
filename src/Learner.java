@@ -97,6 +97,7 @@ public class Learner extends Thread{
         record.setProposerIp(Acceptor.proposerIp.get(Integer.parseInt(logSlot)));
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
             record.setPrintString(accVal.trim());
+            if (record.getPrintString().isEmpty()) System.out.println("^^^^^Empty");
             addLog(Integer.parseInt(logSlot), record, this.proposer);// update log
         }
         //if (checkBack(record, Integer.parseInt(logSlot))) return;

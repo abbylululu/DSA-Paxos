@@ -40,7 +40,7 @@ public class Proposer {
         String maxVal = null;
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < 5000) {
+        while ((System.currentTimeMillis() - startTime) < 1000) {
             String curMsg = (String) this.proposerQueue.poll();
             if (curMsg == null) continue;
 
@@ -85,7 +85,7 @@ public class Proposer {
 
         sendAccept(this.currentProposalNumber, this.currentProposalVal);
         long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < 5000) {
+        while ((System.currentTimeMillis() - startTime) < 1000) {
             String curMsg = (String) this.proposerQueue.poll();
             if (curMsg == null) continue;
 
@@ -114,8 +114,8 @@ public class Proposer {
         reset();
 
         // from user input
-        System.out.println("****propose for log slot: " + this.currentLogSlot +
-                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+        //System.out.println("****propose for log slot: " + this.currentLogSlot +
+                //" with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
 
         int cnt = 3;
         while (cnt > 0) {
@@ -150,8 +150,8 @@ public class Proposer {
         this.currentProposalNumber = 0;
         reset();
 
-        System.out.println("****propose for log slot: " + this.currentLogSlot +
-                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
+//        System.out.println("****propose for log slot: " + this.currentLogSlot +
+//                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
 
         if (synodPhase2()) {
             // commit
