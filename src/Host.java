@@ -13,11 +13,12 @@ public class Host {
     public static String curStartPort;
     public static String curEndPort;
     public static String curIp;
+    public static ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
+    public static TreeMap<String, String> lastSeen = new TreeMap<>();
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
-        ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
         int siteNum = 0;
         // read host name and port number from json
         try {
@@ -111,12 +112,11 @@ public class Host {
         Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
         new Learner(learnerQueue, proposer).start();
 //==================================================================================================
-        // TODO: store and recover log
-        // Restore when site crashes
-//        File logFile = new File("log.txt");
-//        if (logFile.exists()) {
-//            mySite.recover();
-//        }
+        // Restore last seen map
+        File logFile = new File(Host.curSiteId +"lastSeen.txt");
+        if (logFile.exists()) {
+            Host.recoverLastSeen();
+        }
 
         // main thread keeps receiving msgs from user at this site
         while (true) {
@@ -127,6 +127,13 @@ public class Host {
 
             if (input[0].equals("reserve")) {
                 if (input.length != 3) continue;
+
+                lastSeen.put(input[1], curIp);
+                // store lastSeen
+                storeLastSeen();
+                // send to all sites
+                sendLastSeen(sendSocket);
+
                 // process input
                 Reservation newResv = processInput(input, curIp);
                 // learn hole
@@ -154,6 +161,13 @@ public class Host {
 
             } else if (input[0].equals("cancel")) {
                 if (input.length != 2) continue;
+
+                lastSeen.put(input[1], curIp);
+                // store lastSeen
+                storeLastSeen();
+                // send to all sites
+                sendLastSeen(sendSocket);
+
                 // learn hole
                 learnHole(proposer);
                 // check if previously deleted
@@ -202,7 +216,7 @@ public class Host {
 
 
     // FIXME: learn hole failed
-    public static void learnHole(Proposer proposer) {
+    public static void learnHole(Proposer proposer) throws IOException {
         int slot = chooseSlot();
         for (int i = 0; i < slot; i++) {
             Reservation curLog = Learner.log.get(i);
@@ -289,17 +303,64 @@ public class Host {
     public static boolean optimization(String curIp, int curLogSlot) {
         if (curLogSlot < 1) return false;
         int prevLogSlot = curLogSlot - 1;
-        if (Acceptor.proposerIp.containsKey(prevLogSlot)) {
-            String prevIp = Acceptor.proposerIp.get(prevLogSlot);
-            if (prevIp.equals(curIp)) {
+        String prevClient = Learner.log.get(prevLogSlot).getClientName();
+        if (lastSeen.get(prevClient).equals(curIp)) {
 
-                System.out.println("@@@@start optimized algo b/c prevIp is: " + prevIp);
+            System.out.println("@@@@start optimized algo b/c prevClient is: " + prevClient + " with ip: " + lastSeen.get(prevClient));
 
-                return true;
-            }
+            return true;
         }
+//        if (Acceptor.proposerIp.containsKey(prevLogSlot)) {
+//            String prevIp = Acceptor.proposerIp.get(prevLogSlot);
+//            if (prevIp.equals(curIp)) {
+//
+//                System.out.println("@@@@start optimized algo b/c prevIp is: " + prevIp);
+//
+//                return true;
+//            }
+//        }
         return false;
     }
 
+    // FIXME
+    public static void storeLastSeen() throws IOException {
+        byte[] output = Send.serialize(Host.lastSeen);
+        File file = new File(Host.curSiteId + "lastSeen.txt");
+        FileOutputStream fos = null;
+        fos = new FileOutputStream(file);
+        fos.write(output);
+        fos.close();
+    }
 
+    // FIXME
+    public static void recoverLastSeen() throws IOException, ClassNotFoundException {
+        TreeMap<String, String> recoverLastSeen =
+                (TreeMap<String, String>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"lastSeen.txt"));
+        Host.lastSeen = recoverLastSeen;
+    }
+
+    public static String lastSeenFlatten() {
+        String ret = "lastSeen ";
+        for (Map.Entry<String, String> mapElement: Host.lastSeen.entrySet()) {
+            ret += mapElement.getKey();
+            ret += ",";
+            ret += mapElement.getValue();
+            ret += " ";
+        }
+//        System.out.println("%%%%last seen for now is: " + ret);
+        return ret;
+    }
+
+    public static void sendLastSeen(DatagramSocket sendSocket) throws IOException {
+        byte[] sendArray;
+        sendArray = Send.serialize(Host.lastSeenFlatten());
+        DatagramPacket sendPacket = null;
+
+        for (int i = 0; i < Host.sitesInfo.size(); i++) {
+            sendPacket = new DatagramPacket(sendArray, sendArray.length,
+                    InetAddress.getByName(Host.sitesInfo.get(i).get("ip")),
+                    Integer.parseInt(Host.sitesInfo.get(i).get("startPort")));
+            sendSocket.send(sendPacket);
+        }
+    }
 }

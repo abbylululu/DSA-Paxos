@@ -19,7 +19,7 @@ public class Acceptor extends Thread {
     private ArrayList<HashMap<String, String>> sitesInfo;
     private BlockingQueue<String> proposerQueue = null;
     private BlockingQueue<String> learnerQueue = null;
-    public static TreeMap<String, String> findIP;
+//    public static TreeMap<String, String> findIP;
 
 
 
@@ -29,7 +29,7 @@ public class Acceptor extends Thread {
         this.accNum = new TreeMap<>();
         this.accVal = new TreeMap<>();
         proposerIp = new TreeMap<>();
-        findIP = new TreeMap<>();
+//        findIP = new TreeMap<>();
         File acceptorFile = new File(Host.curSiteId +"acceptor.txt");
         if (acceptorFile.exists()) {
             recoverAcceptor();
@@ -77,6 +77,21 @@ public class Acceptor extends Thread {
             assert recvMessage != null;
             //System.out.println("+++[test] " + Host.curSiteId + " receives =>" + recvMessage);
             String[] getCommand = recvMessage.split(" ");//prepare
+            // FIXME
+            if (getCommand[0].equals("lastSeen")) {
+//                System.out.println("####received a last Seen!!");
+                // update last seen
+                for (int i = 1; i < getCommand.length; i++) {
+                    String[] oneTwo = getCommand[i].split(",");
+                    Host.lastSeen.put(oneTwo[0], oneTwo[1]);
+                }
+                // keep in stable storage
+                try {
+                    Host.storeLastSeen();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             if (getCommand[0].equals("promise") || getCommand[0].equals("ack")
                     || getCommand[0].equals("nack")) {// A->P
                 System.err.println("Proposer<" + Host.curSiteId + "> received " + recvMessage + " from " + ipToID(senderIp));
@@ -100,9 +115,9 @@ public class Acceptor extends Thread {
                     try {
                         System.err.println("Acceptor<" + Host.curSiteId + "> received "+ recvMessage
                                 +" from " + ipToID(senderIp));
-                        if (!findIP.containsKey(getCommand[3])) {
-                            findIP.put(getCommand[3], senderIp);
-                        }
+//                        if (!findIP.containsKey(getCommand[3])) {
+//                            findIP.put(getCommand[3], senderIp);
+//                        }
                         if (getCommand[2].equals("cancel")) {
                             recvAccept(Integer.parseInt(getCommand[1]), getCommand[2] + " " + getCommand[3],
                                     senderIp, Integer.parseInt(getCommand[4]));
@@ -155,6 +170,7 @@ public class Acceptor extends Thread {
         } else {
             sendNack(senderIP, logSlot);
         }
+        Host.sendLastSeen(sendSocket);
     }
 
     // @From: Proposer
@@ -172,6 +188,7 @@ public class Acceptor extends Thread {
         } else {
             sendNack(senderIP, logSlot);
         }
+        Host.sendLastSeen(sendSocket);
     }
 
     // @From: Acceptor(current)
@@ -193,6 +210,7 @@ public class Acceptor extends Thread {
         }
         acceptorSend(senderIP, promiseMsg);
         System.err.println("Acceptor<" + Host.curSiteId + "> sends " + promiseMsg +" to " + ipToID(senderIP));
+        Host.sendLastSeen(sendSocket);
     }
 
     // @From: Acceptor(current)
@@ -206,6 +224,7 @@ public class Acceptor extends Thread {
         acceptorSend(senderIP, nackMsg);
         System.err.println("Acceptor<" + Host.curSiteId + "> sends nack(" +
                 maxNum  +") to " + ipToID(senderIP));
+        Host.sendLastSeen(sendSocket);
     }
 
     // @From: Acceptor(current)
@@ -218,6 +237,7 @@ public class Acceptor extends Thread {
         acceptorSend(senderIP, ackMsg);
         System.err.println("Acceptor<" + Host.curSiteId + "> sends ack(" +
                 Integer.toString(this.maxPrepare.get(logSlot))  +") to " + ipToID(senderIP));
+        Host.sendLastSeen(sendSocket);
     }
 
     // @From: Acceptor(current)
@@ -230,6 +250,7 @@ public class Acceptor extends Thread {
         System.err.println("Acceptor<" + Host.curSiteId + "> sends accepted(" +
                 Integer.toString(this.accNum.get(logSlot)) + ","
                 + this.accVal.get(logSlot)  +") to " + ipToID(senderIP));
+        Host.sendLastSeen(sendSocket);
     }
 
     public void acceptorSend(String senderIP, String message) throws IOException {
@@ -245,10 +266,11 @@ public class Acceptor extends Thread {
         assert receivePort != null;
         DatagramPacket sendPacket = new DatagramPacket(sendArray, sendArray.length, targetIP, Integer.parseInt(receivePort));
         this.sendSocket.send(sendPacket);
+        Host.sendLastSeen(sendSocket);
     }
 
     private void recordAcceptor() throws IOException {
-        Record log = new Record(this.maxPrepare, this.accNum, this.accVal, proposerIp, findIP);
+        Record log = new Record(this.maxPrepare, this.accNum, this.accVal, proposerIp);
         byte[] output = Send.serialize(log);
         File file = new File(Host.curSiteId +"acceptor.txt");
         FileOutputStream fos = null;
@@ -263,7 +285,6 @@ public class Acceptor extends Thread {
         this.accNum = recover.getAccNum();
         this.accVal = recover.getAccVal();
         proposerIp = recover.getProposerIp();
-        findIP = recover.getFindIP();
     }
 
     public static byte[] readFromFile(String fileName) throws IOException {
