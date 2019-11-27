@@ -14,7 +14,7 @@ public class Host {
     public static String curEndPort;
     public static String curIp;
     public static ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
-    public static TreeMap<String, String> lastSeen = new TreeMap<>();
+    public static HashMap<String, String> lastSeen = new HashMap<>();
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         // get all sites' information from knownhost
@@ -316,7 +316,7 @@ public class Host {
         String prevClient = Learner.log.get(prevLogSlot).getClientName();
         if (lastSeen.get(prevClient).equals(curIp)) {
 
-            System.out.println("@@@@start optimized algo b/c prevClient is: " + prevClient + " with ip: " + lastSeen.get(prevClient));
+            //System.out.println("@@@@start optimized algo b/c prevClient is: " + prevClient + " with ip: " + lastSeen.get(prevClient));
 
             return true;
         }
@@ -334,7 +334,9 @@ public class Host {
 
     // FIXME
     public static void storeLastSeen() throws IOException {
-        byte[] output = Send.serialize(Host.lastSeen);
+        Record newR = new Record(null,null, null, null);
+        newR.setLastSeen(Host.lastSeen);
+        byte[] output = Send.serialize(newR);
         File file = new File(Host.curSiteId + "lastSeen.txt");
         FileOutputStream fos = null;
         fos = new FileOutputStream(file);
@@ -344,9 +346,10 @@ public class Host {
 
     // FIXME
     public static void recoverLastSeen() throws IOException, ClassNotFoundException {
-        TreeMap<String, String> recoverLastSeen =
-                (TreeMap<String, String>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"lastSeen.txt"));
-        Host.lastSeen = recoverLastSeen;
+        @SuppressWarnings (value="unchecked")
+        Record recoverLastSeen =
+                (Record) Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"lastSeen.txt"));
+        Host.lastSeen = recoverLastSeen.getLastSeen();
     }
 
     public static String lastSeenFlatten() {
