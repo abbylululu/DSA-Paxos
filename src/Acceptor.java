@@ -144,8 +144,22 @@ public class Acceptor extends Thread {
                     e.printStackTrace();
                 }
 
-            } else {
+            } else if (getCommand[0].equals("MaximumLog")) {
+                try {
+                    acceptorSend(senderIp, "Max " + Integer.toString(Learner.getMaxLogSlot()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 //System.out.println("[test]Oops, wrong msg!");
+            } else if (getCommand[0].equals("Max")) {
+                //System.out.println("%%%%#####Recive ask max " + getCommand[1]);
+                Learner.newMax = Integer.parseInt(getCommand[1]) > Learner.newMax ? Integer.parseInt(getCommand[1]) : Learner.newMax;
+
+                try {
+                    learnerQueue.put(recvMessage);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             this.buffer = new byte[65535];//reset
