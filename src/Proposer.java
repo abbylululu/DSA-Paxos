@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.DatagramSocket;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -61,6 +62,7 @@ public class Proposer {
                     if (maxVal != null) {
                         this.currentProposalVal = maxVal;
                     }
+                    reset();
                     return true;
                 }
             }
@@ -78,7 +80,7 @@ public class Proposer {
     }
 
 
-    public boolean synodPhase2() {
+    public boolean synodPhase2() throws IOException {
         int majority = this.majority();
 
         sendAccept(this.currentProposalNumber, this.currentProposalVal);
@@ -92,6 +94,7 @@ public class Proposer {
                 this.ackCounter++;
 
                 if (this.ackCounter >= majority) {
+                    reset();
                     return true;
                 }
             }
@@ -104,10 +107,11 @@ public class Proposer {
     }
 
 
-    public boolean startSynod(Integer logSlot, String val) {
+    public boolean startSynod(Integer logSlot, String val) throws IOException {
         this.currentLogSlot = logSlot;
         this.currentProposalVal = val;
         this.currentProposalNumber = this.uid;
+        reset();
 
         // from user input
         System.out.println("****propose for log slot: " + this.currentLogSlot +
@@ -140,10 +144,11 @@ public class Proposer {
     }
 
 
-    public boolean startOptimizedSynod(Integer logSlot, String val) {
+    public boolean startOptimizedSynod(Integer logSlot, String val) throws IOException {
         this.currentLogSlot = logSlot;
         this.currentProposalVal = val;
         this.currentProposalNumber = 0;
+        reset();
 
         System.out.println("****propose for log slot: " + this.currentLogSlot +
                 " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
@@ -246,8 +251,6 @@ public class Proposer {
                 accVal = accVal + splitted[i] + " ";
             }
             accVal = accVal.trim();
-
-            System.out.println("???am I idiot? :" + accVal);
         }
         String sender_ip = splitted[splitted.length - 1];
 
@@ -265,7 +268,7 @@ public class Proposer {
         this.currentProposalNumber = Math.max(recvMaxNum, this.currentProposalNumber);
     }
 
-    public void sendAccept(int proposalNumber, String proposalVal) {
+    public void sendAccept(int proposalNumber, String proposalVal) throws IOException {
         String msg = String.format("accept %d %s %d", proposalNumber,
                 proposalVal, this.currentLogSlot);
 
@@ -279,10 +282,11 @@ public class Proposer {
 
 //        System.err.println("sending accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
         System.err.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
+        Host.sendLastSeen(sendSocket);
     }
 
 
-    public void sendCommit(int accNum, String accVal) {
+    public void sendCommit(int accNum, String accVal) throws IOException {
         String msg = String.format("commit %d %s %d %s", accNum, accVal,
                 this.currentLogSlot, this.sitesInfo.get(uid).get("ip"));
 
@@ -294,5 +298,6 @@ public class Proposer {
 
 //        System.err.println("sending commit ('" + accVal + "')to all sites");
         System.err.println("Distinguished Learner<" + this.sitesInfo.get(uid).get("siteId") + "> sends commit ('" + accVal + "')to all sites");
+        Host.sendLastSeen(sendSocket);
     }
 }
