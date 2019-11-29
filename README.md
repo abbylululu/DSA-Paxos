@@ -62,7 +62,7 @@ the communication between threads implemented by BlockingQueue:
 4. Learner: Continuously recording the incoming message and updating log
 
 ## IV. Implementation
-
+To be completed in the next few days
 
 ## V. Build
 ```shell
