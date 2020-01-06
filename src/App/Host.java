@@ -162,7 +162,7 @@ public class Host {
                     if (!res) {
                         System.out.println("Cannot schedule reservation for " + input[1] + ".");
                     } else {
-                        System.out.println("Messages.Reservation submitted for " + input[1] + ".");
+                        System.out.println("Entity.Reservation submitted for " + input[1] + ".");
                     }
 
 
@@ -193,7 +193,7 @@ public class Host {
                         res = proposer.startSynod(logSlot, commandLine);
                     }
                     if (res) {
-                        System.out.println("Messages.Reservation for " + input[1] + " cancelled.");
+                        System.out.println("Entity.Reservation for " + input[1] + " cancelled.");
                     } else {
                         System.out.println("Cannot cancel reservation for " + input[1] + ".");
                     }
