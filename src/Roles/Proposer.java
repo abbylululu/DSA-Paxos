@@ -1,10 +1,15 @@
+package Roles;
+
+import Utils.SendUtils;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class Proposer {
-    // ------------------MEMBER VARS------------------ //
     private int uid;
     private ArrayList<HashMap<String, String>> sitesInfo;
     private DatagramSocket sendSocket; // send
@@ -17,10 +22,9 @@ public class Proposer {
     private TreeMap<String, Map.Entry<Integer, String>> promiseQueue;
     private int ackCounter;
 
-    // ------------------CONSTRUCTOR------------------ //
-
-
-    public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket, BlockingQueue<String> blocking_queue) {
+    @Contract(pure = true)
+    public Proposer(int uid, ArrayList<HashMap<String, String>> sitesInfo,
+                    DatagramSocket sendSocket, BlockingQueue<String> blocking_queue) {
         this.uid = uid;
         this.sitesInfo = sitesInfo;
         this.sendSocket = sendSocket;
@@ -29,8 +33,7 @@ public class Proposer {
         this.promiseQueue = new TreeMap<>();
     }
 
-    // ------------------HELPER------------------ //
-    public boolean synodPhase1() {
+    private boolean synodPhase1() {
         int majority = this.majority();
         // 1. send prepare for proposing
         this.sendPrepare();
@@ -41,7 +44,7 @@ public class Proposer {
         // time out after 10000 millis
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < 1000) {
-            String curMsg = (String) this.proposerQueue.poll();
+            String curMsg = this.proposerQueue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -55,8 +58,6 @@ public class Proposer {
                         String curAccString = accEntry.getValue();
                         if (curAccNum > maxAccNum && curAccString != null) {
                             maxVal = curAccString;
-
-                            //System.out.println("****now maxVal becomes: " + maxVal);
                         }
                     }
                     if (maxVal != null) {
@@ -65,8 +66,7 @@ public class Proposer {
                     reset();
                     return true;
                 }
-            }
-            else if (splitted[0].equals("nack")) {
+            } else if (splitted[0].equals("nack")) {
                 recvNack(curMsg);
             }
         }
@@ -74,19 +74,19 @@ public class Proposer {
         return false;
     }
 
-    public void reset() {
+    private void reset() {
         this.promiseQueue.clear();
         this.ackCounter = 0;
     }
 
 
-    public boolean synodPhase2() throws IOException {
+    private boolean synodPhase2() throws IOException {
         int majority = this.majority();
 
         sendAccept(this.currentProposalNumber, this.currentProposalVal);
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < 1000) {
-            String curMsg = (String) this.proposerQueue.poll();
+            String curMsg = this.proposerQueue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -97,8 +97,7 @@ public class Proposer {
                     reset();
                     return true;
                 }
-            }
-            else if (splitted[0].equals("nack")) {
+            } else if (splitted[0].equals("nack")) {
                 recvNack(curMsg);
             }
         }
@@ -114,16 +113,13 @@ public class Proposer {
         reset();
 
         // from user input
-        //System.out.println("****propose for log slot: " + this.currentLogSlot +
-                //" with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
-
         int cnt = 3;
         while (cnt > 0) {
             if (!synodPhase1()) {
                 cnt--;
                 continue;
             }
-            if(!synodPhase2()) {
+            if (!synodPhase2()) {
                 cnt--;
                 continue;
             }
@@ -131,14 +127,10 @@ public class Proposer {
         }
 
         if (cnt <= 0) {
-            //System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
-                    //" with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
             return false;
         }
 
         // commit
-        //System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
-         //       " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
@@ -149,10 +141,6 @@ public class Proposer {
         this.currentProposalVal = val;
         this.currentProposalNumber = 0;
         reset();
-
-//        System.out.println("****propose for log slot: " + this.currentLogSlot +
-//                " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
-
         if (synodPhase2()) {
             // commit
             sendCommit(this.currentProposalNumber, this.currentProposalVal);
@@ -165,7 +153,7 @@ public class Proposer {
                 cnt--;
                 continue;
             }
-            if(!synodPhase2()) {
+            if (!synodPhase2()) {
                 cnt--;
                 continue;
             }
@@ -173,23 +161,18 @@ public class Proposer {
         }
 
         if (cnt <= 0) {
-            //System.out.println("****failed proposing for log slot: " + this.currentLogSlot +
-              //      " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
             return false;
         }
 
         // commit
-        //System.out.println("****successfully proposed for log slot: " + this.currentLogSlot +
-         //       " with proposal value & number: " + this.currentProposalVal + " & " + this.currentProposalNumber);
         sendCommit(this.currentProposalNumber, this.currentProposalVal);
         return this.currentProposalVal.equals(val);
     }
 
 
-    public int majority() {
+    private int majority() {
         int numSites = this.sitesInfo.size();
-        int majority = (int) Math.ceil(numSites / 2.0);
-        return majority;
+        return (int) Math.ceil(numSites / 2.0);
     }
 
     public int getCurrentProposalNumber() {
@@ -216,7 +199,7 @@ public class Proposer {
         this.currentProposalVal = currentProposalVal;
     }
 
-    public void sendPrepare() {
+    private void sendPrepare() {
         // increment the proposal number
         this.currentProposalNumber += this.sitesInfo.size();
 
@@ -228,76 +211,71 @@ public class Proposer {
         sb.append(this.currentLogSlot);
 
         // send prepare to all sites
-        for (int i = 0; i < this.sitesInfo.size(); i++) {
-            String recvIp = this.sitesInfo.get(i).get("ip");
-            Send prepare = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, sb.toString());
+        for (HashMap<String, String> stringStringHashMap : this.sitesInfo) {
+            String recvIp = stringStringHashMap.get("ip");
+            SendUtils prepare = new SendUtils(recvIp, Integer.parseInt(stringStringHashMap.get("startPort")), this.sendSocket, sb.toString());
             prepare.start();
         }
-
-//        System.err.println("sending prepare(" + this.current_proposal_number + ")to all sites");
-        System.err.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends prepare(" + this.currentProposalNumber + ")to all sites");
+        System.err.printf("Roles.Proposer<%s> sends prepare(%d)to all sites%n",
+                this.sitesInfo.get(uid).get("siteId"), this.currentProposalNumber);
     }
 
 
-    public void recvPromise(String message) {
+    private void recvPromise(@NotNull String message) {
         // parse the received message
         String[] splitted = message.split(" ");
         int accNum = 0;
-        String accVal = null;
+        StringBuilder accVal = null;
         if (!splitted[1].equals("null")) {
             accNum = Integer.parseInt(splitted[1]);
-            accVal = "";
+            accVal = new StringBuilder();
             for (int i = 2; i < splitted.length - 2; i++) {
-                accVal = accVal + splitted[i] + " ";
+                accVal.append(splitted[i]).append(" ");
             }
-            accVal = accVal.trim();
+            accVal = new StringBuilder(accVal.toString().trim());
         }
         String sender_ip = splitted[splitted.length - 1];
 
         // store in my promise queue for current log slot
         // promise queues: slot_queue(siteIp -> pair(accNum, accVal)
-        Map.Entry<Integer, String> recvAccs = new AbstractMap.SimpleEntry<Integer, String>(accNum, accVal);
+        assert accVal != null;
+        Map.Entry<Integer, String> recvAccs = new AbstractMap.SimpleEntry<>(accNum, accVal.toString());
         this.promiseQueue.put(sender_ip, recvAccs);
     }
 
 
-    public void recvNack(String message) {
+    private void recvNack(@NotNull String message) {
         // parse the received message
         String[] splitted = message.split(" ");
         int recvMaxNum = Integer.parseInt(splitted[1]);
         this.currentProposalNumber = Math.max(recvMaxNum, this.currentProposalNumber);
     }
 
-    public void sendAccept(int proposalNumber, String proposalVal) throws IOException {
+    private void sendAccept(int proposalNumber, String proposalVal) throws IOException {
         String msg = String.format("accept %d %s %d", proposalNumber,
                 proposalVal, this.currentLogSlot);
 
-//        System.out.println("****accept from apple is: " + msg);
-
-        for (int i = 0; i < this.sitesInfo.size(); i++) {
-            String recvIp = this.sitesInfo.get(i).get("ip");
-            Send accept = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, msg);
+        for (HashMap<String, String> stringStringHashMap : this.sitesInfo) {
+            String recvIp = stringStringHashMap.get("ip");
+            SendUtils accept = new SendUtils(recvIp, Integer.parseInt(stringStringHashMap.get("startPort")), this.sendSocket, msg);
             accept.start();
         }
-
-//        System.err.println("sending accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
-        System.err.println("Proposer<" + this.sitesInfo.get(uid).get("siteId") + "> sends accept(" + proposalNumber + "," + "'" + proposalVal + "') to all sites");
-//        Host.sendLastSeen(sendSocket);
+        System.err.printf("Roles.Proposer<%s> sends accept(%d,'%s') to all sites%n",
+                this.sitesInfo.get(uid).get("siteId"), proposalNumber, proposalVal);
     }
 
 
-    public void sendCommit(int accNum, String accVal) throws IOException {
+    private void sendCommit(int accNum, String accVal) throws IOException {
         String msg = String.format("commit %d %s %d %s", accNum, accVal,
                 this.currentLogSlot, this.sitesInfo.get(uid).get("ip"));
 
-        for (int i = 0; i < this.sitesInfo.size(); i++) {
-            String recvIp = this.sitesInfo.get(i).get("ip");
-            Send commit = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, msg);
+        for (HashMap<String, String> stringStringHashMap : this.sitesInfo) {
+            String recvIp = stringStringHashMap.get("ip");
+            SendUtils commit;
+            commit = new SendUtils(recvIp, Integer.parseInt(stringStringHashMap.get("startPort")), this.sendSocket, msg);
             commit.start();
         }
-
-//        System.err.println("sending commit ('" + accVal + "')to all sites");
-        System.err.println("Distinguished Learner<" + this.sitesInfo.get(uid).get("siteId") + "> sends commit ('" + accVal + "')to all sites");
-//        Host.sendLastSeen(sendSocket);
+        System.err.printf("Distinguished Roles.Learner<%s> sends commit ('%s')to all sites%n",
+                this.sitesInfo.get(uid).get("siteId"), accVal);
     }
 }

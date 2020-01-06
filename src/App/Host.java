@@ -1,3 +1,15 @@
+package App;
+
+import Utils.CustomComparator;
+import Messages.Record;
+import Messages.Reservation;
+import Roles.Acceptor;
+import Roles.Learner;
+import Roles.Proposer;
+import Utils.SendUtils;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -10,16 +22,13 @@ import java.util.concurrent.BlockingQueue;
 
 public class Host {
     public static String curSiteId;
-    public static String curStartPort;
-    public static String curEndPort;
     public static String curIp;
-    public static ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
+    private static ArrayList<HashMap<String, String>> sitesInfo = new ArrayList<>();
     public static HashMap<String, String> lastSeen = new HashMap<>();
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         // get all sites' information from knownhost
         // store info into a hashmap, property -> info, arranged by index of each site
-        int siteNum = 0;
         // read host name and port number from json
         try {
             JSONParser parser = new JSONParser();
@@ -36,7 +45,7 @@ public class Host {
             Collections.sort(allSiteId);
 
             // initialze array storing all informations of all sites
-            siteNum = allSiteId.size();
+            int siteNum = allSiteId.size();
             for (int i = 0; i < siteNum; i++) {
                 HashMap<String, String> tmp = new HashMap<>();
                 sitesInfo.add(tmp);
@@ -51,7 +60,7 @@ public class Host {
                 String udpEndPort = siteInfo.get("udp_end_port").toString();
                 String ipAddr = (String) siteInfo.get("ip_address");
 
-                Integer siteIndex = 0;
+                int siteIndex = 0;
                 for (int i = 0; i < allSiteId.size(); i++) {
                     if (allSiteId.get(i).equals(Id)) siteIndex = i;
                 }
@@ -69,14 +78,12 @@ public class Host {
             e.printStackTrace();
         }
 
-//==================================================================================================
-        // ---------test---------//
         String id = args[0];
 
         // find current site info
         curSiteId = "";
-        curStartPort = "";
-        curEndPort = "";
+        String curStartPort = "";
+        String curEndPort = "";
         curIp = "";
 
         InetAddress inetAddress = InetAddress.getLocalHost();
@@ -94,128 +101,132 @@ public class Host {
             }
         }
 
-//==================================================================================================
         // Blocking Queue
-        BlockingQueue<String> proposerQueue = new ArrayBlockingQueue<String>(1024);
-        BlockingQueue<String> learnerQueue = new ArrayBlockingQueue<String>(1024);
-//==================================================================================================
+        BlockingQueue<String> proposerQueue = new ArrayBlockingQueue<>(1024);
+        BlockingQueue<String> learnerQueue = new ArrayBlockingQueue<>(1024);
+
         // Start port is for listening
         // End port is for sending
         // Create receive socket by start port number
-        Integer receivePort = Integer.parseInt(curStartPort);
+        int receivePort = Integer.parseInt(curStartPort);
         // Create send socket by end port number
-        Integer sendPort = Integer.parseInt(curEndPort);
+        int sendPort = Integer.parseInt(curEndPort);
         DatagramSocket receiveSocket = new DatagramSocket(receivePort);
         DatagramSocket sendSocket = new DatagramSocket(sendPort);
 
         new Acceptor(proposerQueue, learnerQueue, receiveSocket, sendSocket, sitesInfo).start();// child thread go here
         Proposer proposer = new Proposer(uid, sitesInfo, sendSocket, proposerQueue);
         new Learner(learnerQueue, proposer, sitesInfo, sendSocket).start();
-//==================================================================================================
+
         // Restore last seen map
-        File logFile = new File(Host.curSiteId +"lastSeen.txt");
+        File logFile = new File(Host.curSiteId + "lastSeen.txt");
         if (logFile.exists()) {
             Host.recoverLastSeen();
         }
 
         // main thread keeps receiving msgs from user at this site
         while (true) {
-            //System.out.println("[test]Please enter the command: ");
+            System.out.println("Please enter the command: ");
             Scanner in = new Scanner(System.in);
             String commandLine = in.nextLine();
             String[] input = commandLine.split("\\s+");
 
-            if (input[0].equals("reserve")) {
-                if (input.length != 3) continue;
+            switch (input[0]) {
+                case "reserve": {
+                    if (input.length != 3) continue;
 
-                lastSeen.put(input[1], curIp);
-                // store lastSeen
-                storeLastSeen();
-                // send to all sites
-                sendLastSeen(sendSocket);
+                    lastSeen.put(input[1], curIp);
+                    // store lastSeen
+                    storeLastSeen();
+                    // send to all sites
+                    sendLastSeen(sendSocket);
 
-                // process input
-                Reservation newResv = processInput(input, curIp);
-                // learn hole
-                learnHole(proposer);
-                // detect conflict
-                assert newResv != null;
-                if(isConflict(newResv.getFlights()) || isConflictName(newResv.getClientName())) {
-                    System.err.println("Conflict reservation for " + input[1] + ".");
-                    continue;
+                    // process input
+                    Reservation newResv = processInput(input, curIp);
+                    // learn hole
+                    learnHole(proposer);
+                    // detect conflict
+                    assert newResv != null;
+                    if (isConflict(newResv.getFlights()) || isConflictName(newResv.getClientName())) {
+                        System.err.println("Conflict reservation for " + input[1] + ".");
+                        continue;
+                    }
+                    // choose a slot to propose
+                    int logSlot = chooseSlot();
+                    boolean res;
+                    if (optimization(curIp, logSlot)) {// 1 phase
+                        res = proposer.startOptimizedSynod(logSlot, newResv.flatten());
+                    } else {// 2 phases
+                        res = proposer.startSynod(logSlot, newResv.flatten());
+                    }
+                    if (!res) {
+                        System.out.println("Cannot schedule reservation for " + input[1] + ".");
+                    } else {
+                        System.out.println("Messages.Reservation submitted for " + input[1] + ".");
+                    }
+
+
+                    break;
                 }
-                // choose a slot to propose
-                int logSlot = chooseSlot();
-                boolean res;
-                if (optimization(curIp, logSlot)) {// 1 phase
-                    res = proposer.startOptimizedSynod(logSlot, newResv.flatten());
-                } else {// 2 phases
-                    res = proposer.startSynod(logSlot, newResv.flatten());
+                case "cancel": {
+                    if (input.length != 2) continue;
+
+                    lastSeen.put(input[1], curIp);
+                    // store lastSeen
+                    storeLastSeen();
+                    // send to all sites
+                    sendLastSeen(sendSocket);
+
+                    // learn hole
+                    learnHole(proposer);
+                    // check if previously deleted
+                    if (prevDel(commandLine)) {
+                        System.err.println("previously deleted cancel for " + input[1] + ".");
+                        continue;
+                    }
+                    // choose a slot to propose
+                    int logSlot = chooseSlot();
+                    boolean res;
+                    if (optimization(curIp, logSlot)) {// 1 phase
+                        res = proposer.startOptimizedSynod(logSlot, commandLine);
+                    } else {// 2 phases
+                        res = proposer.startSynod(logSlot, commandLine);
+                    }
+                    if (res) {
+                        System.out.println("Messages.Reservation for " + input[1] + " cancelled.");
+                    } else {
+                        System.out.println("Cannot cancel reservation for " + input[1] + ".");
+                    }
+
+                    break;
                 }
-                if (!res) {
-                    System.out.println("Cannot schedule reservation for " + input[1] + ".");
-                } else {
-                    System.out.println("Reservation submitted for " + input[1] + ".");
-                }
+                case "view": // Print dictionary here
+                    printDictionary();
 
+                    break;
+                case "log": // Print log here
+                    printLog();
 
-            } else if (input[0].equals("cancel")) {
-                if (input.length != 2) continue;
+                    break;
+                case "quit":
+                    System.exit(0);
 
-                lastSeen.put(input[1], curIp);
-                // store lastSeen
-                storeLastSeen();
-                // send to all sites
-                sendLastSeen(sendSocket);
-
-                // learn hole
-                learnHole(proposer);
-                // check if previously deleted
-                if(prevDel(commandLine)) {
-                    System.err.println("previously deleted cancel for " + input[1] + ".");
-                    continue;
-                }
-                // choose a slot to propose
-                int logSlot = chooseSlot();
-                boolean res;
-                if (optimization(curIp, logSlot)) {// 1 phase
-                    res = proposer.startOptimizedSynod(logSlot, commandLine);
-                } else {// 2 phases
-                    res = proposer.startSynod(logSlot, commandLine);
-                }
-                if (res) {
-                    System.out.println("Reservation for " + input[1] + " cancelled.");
-                } else {
-                    System.out.println("Cannot cancel reservation for " + input[1] + ".");
-                }
-
-            } else if (input[0].equals("view")) {// Print dictionary here
-                printDictionary();
-
-            } else if (input[0].equals("log")) {// Print log here
-                printLog();
-
-            } else if (input[0].equals("quit")) {
-                System.exit(0);
-
-            } else {
-                System.out.println("Oops, something is going wrong here!");
+                default:
+                    System.out.println("Oops, something is going wrong here!");
+                    break;
             }
         }
     }
 
-    //==================================================================================================
-    public static int chooseSlot() {
+    private static int chooseSlot() {
         if (Learner.log.isEmpty()) {
             return 0;
         }
-        int maxSlot = -1;
+        int maxSlot;
         maxSlot = Learner.getMaxLogSlot();
         return maxSlot + 1;
     }
 
-
-    // FIXME: learn hole failed
     public static void learnHole(Proposer proposer) throws IOException {
         int slot = chooseSlot();
         for (int i = 0; i < slot; i++) {
@@ -239,14 +250,13 @@ public class Host {
     }
 
 
-    public static boolean isConflict(ArrayList<Integer> flights) {
+    private static boolean isConflict(ArrayList<Integer> flights) {
         // keep track of reserved flights in dict, mapping flight number to count
         HashMap<Integer, Integer> ReservedFlights = new HashMap<>();
         if (Learner.dictionary.isEmpty()) return false;
         for (int i = 0; i < Learner.dictionary.size(); i++) {
             ArrayList<Integer> curLocalReservedFlights = Learner.dictionary.get(i).getFlights();
-            for (int j = 0; j < curLocalReservedFlights.size(); j++) {
-                Integer curFlight = curLocalReservedFlights.get(j);
+            for (Integer curFlight : curLocalReservedFlights) {
                 if (ReservedFlights.containsKey(curFlight)) {
                     Integer curCnt = ReservedFlights.get(curFlight);
                     ReservedFlights.put(curFlight, curCnt + 1);
@@ -256,15 +266,15 @@ public class Host {
             }
         }
 
-        for (int i = 0; i < flights.size(); i++) {
-            if (ReservedFlights.containsKey(flights.get(i)) && ReservedFlights.get(flights.get(i)) == 2) {
+        for (Integer flight : flights) {
+            if (ReservedFlights.containsKey(flight) && ReservedFlights.get(flight) == 2) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean isConflictName(String clientName) {
+    private static boolean isConflictName(String clientName) {
         if (Learner.dictionary.isEmpty()) return false;
         for (int i = 0; i < Learner.dictionary.size(); i++) {
             if (Learner.dictionary.get(i).getClientName().equals(clientName)) {
@@ -274,15 +284,15 @@ public class Host {
         return false;
     }
 
-
-    public static Reservation processInput(String[] input, String proposerIp) {
+    @Nullable
+    private static Reservation processInput(@NotNull String[] input, String proposerIp) {
         String clientName = input[1];
         // reserve
         if (input.length == 3) {
             String[] parsedFlights = input[2].split(",");
             ArrayList<Integer> newFlights = new ArrayList<>();
-            for(int i = 0; i < parsedFlights.length; i++) {
-                newFlights.add(Integer.parseInt(parsedFlights[i]));
+            for (String parsedFlight : parsedFlights) {
+                newFlights.add(Integer.parseInt(parsedFlight));
             }
             return new Reservation("reserve", clientName, newFlights);
         }
@@ -290,9 +300,8 @@ public class Host {
     }
 
 
-    public static boolean prevDel(String newCancel) {
-        for (Map.Entry<Integer, Reservation> mapElement: Learner.log.entrySet()) {
-//            System.out.println("***equal?" + mapElement.getValue().trim().equals(newCancel));
+    private static boolean prevDel(String newCancel) {
+        for (Map.Entry<Integer, Reservation> mapElement : Learner.log.entrySet()) {
             if (newCancel.equals(mapElement.getValue().flatten())) {
                 return true;
             }
@@ -301,17 +310,17 @@ public class Host {
     }
 
 
-    public static void printDictionary() {
+    private static void printDictionary() {
         ArrayList<Reservation> newDict = Learner.dictionary;
         newDict.sort(new CustomComparator());
-        for (int i = 0; i < newDict.size(); i++) {
-            System.out.println(newDict.get(i).getClientName() + " " + newDict.get(i).getPrintFlight());
+        for (Reservation reservation : newDict) {
+            System.out.println(reservation.getClientName() + " " + reservation.getPrintFlight());
         }
     }
 
 
-    public static void printLog() {
-        for(Map.Entry<Integer,Reservation> entry : Learner.log.entrySet()) {
+    private static void printLog() {
+        for (Map.Entry<Integer, Reservation> entry : Learner.log.entrySet()) {
             Reservation value = entry.getValue();
             if (value.getOperation().equals("reserve")) {
                 System.out.println(value.getOperation() + " "
@@ -322,64 +331,46 @@ public class Host {
         }
     }
 
-    public static boolean optimization(String curIp, int curLogSlot) {
+    private static boolean optimization(String curIp, int curLogSlot) {
         if (curLogSlot < 1) return false;
         int prevLogSlot = curLogSlot - 1;
         String prevClient = Learner.log.get(prevLogSlot).getClientName();
-        if (lastSeen.get(prevClient).equals(curIp)) {
-
-            //System.out.println("@@@@start optimized algo b/c prevClient is: " + prevClient + " with ip: " + lastSeen.get(prevClient));
-
-            return true;
-        }
-//        if (Acceptor.proposerIp.containsKey(prevLogSlot)) {
-//            String prevIp = Acceptor.proposerIp.get(prevLogSlot);
-//            if (prevIp.equals(curIp)) {
-//
-//                System.out.println("@@@@start optimized algo b/c prevIp is: " + prevIp);
-//
-//                return true;
-//            }
-//        }
-        return false;
+        return lastSeen.get(prevClient).equals(curIp);
     }
 
-    // FIXME
     public static void storeLastSeen() throws IOException {
-        Record newR = new Record(null,null, null, null);
+        Record newR = new Record(null, null, null, null);
         newR.setLastSeen(Host.lastSeen);
-        byte[] output = Send.serialize(newR);
+        byte[] output = SendUtils.serialize(newR);
         File file = new File(Host.curSiteId + "lastSeen.txt");
-        FileOutputStream fos = null;
+        FileOutputStream fos;
         fos = new FileOutputStream(file);
         fos.write(output);
         fos.close();
     }
 
-    // FIXME
-    public static void recoverLastSeen() throws IOException, ClassNotFoundException {
-        @SuppressWarnings (value="unchecked")
+    private static void recoverLastSeen() throws IOException, ClassNotFoundException {
         Record recoverLastSeen =
-                (Record) Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"lastSeen.txt"));
+                (Record) Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId + "lastSeen.txt"));
         Host.lastSeen = recoverLastSeen.getLastSeen();
     }
 
-    public static String lastSeenFlatten() {
-        String ret = "lastSeen ";
-        for (Map.Entry<String, String> mapElement: Host.lastSeen.entrySet()) {
-            ret += mapElement.getKey();
-            ret += ",";
-            ret += mapElement.getValue();
-            ret += " ";
+    @NotNull
+    private static String lastSeenFlatten() {
+        StringBuilder ret = new StringBuilder("lastSeen ");
+        for (Map.Entry<String, String> mapElement : Host.lastSeen.entrySet()) {
+            ret.append(mapElement.getKey());
+            ret.append(",");
+            ret.append(mapElement.getValue());
+            ret.append(" ");
         }
-//        System.out.println("%%%%last seen for now is: " + ret);
-        return ret;
+        return ret.toString();
     }
 
     public static void sendLastSeen(DatagramSocket sendSocket) throws IOException {
         byte[] sendArray;
-        sendArray = Send.serialize(Host.lastSeenFlatten());
-        DatagramPacket sendPacket = null;
+        sendArray = SendUtils.serialize(Host.lastSeenFlatten());
+        DatagramPacket sendPacket;
 
         for (int i = 0; i < Host.sitesInfo.size(); i++) {
             sendPacket = new DatagramPacket(sendArray, sendArray.length,

@@ -1,3 +1,5 @@
+package Utils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -6,13 +8,13 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class Send extends Thread{
+public class SendUtils extends Thread {
     private String targetIp;
     private int receivePort; // allocated start port
     DatagramSocket sendSocket;
     String message;
 
-    public Send(String targetIp, int receivePort, DatagramSocket sendSocket, String message) {
+    public SendUtils(String targetIp, int receivePort, DatagramSocket sendSocket, String message) {
         this.targetIp = targetIp;
         this.receivePort = receivePort;
         this.sendSocket = sendSocket;

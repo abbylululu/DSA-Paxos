@@ -1,6 +1,8 @@
-/*
-* This data structure is for stable storage of Acceptor
+package Messages;/*
+ * This data structure is for stable storage of Roles.Acceptor
  */
+
+import org.jetbrains.annotations.Contract;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -13,6 +15,7 @@ public class Record implements Serializable {
     private TreeMap<Integer, String> proposerIp;
     private HashMap<String, String> lastSeen;
 
+    @Contract(pure = true)
     public Record(TreeMap<Integer, Integer> maxPrepare, TreeMap<Integer, Integer> accNum,
                   TreeMap<Integer, String> accVal, TreeMap<Integer, String> proposerIp) {
         this.maxPrepare = maxPrepare;

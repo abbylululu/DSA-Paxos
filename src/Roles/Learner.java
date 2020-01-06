@@ -1,3 +1,11 @@
+package Roles;
+
+import Messages.Reservation;
+import Utils.SendUtils;
+import App.Host;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -5,31 +13,31 @@ import java.net.DatagramSocket;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
-public class Learner extends Thread{
-    private ArrayList<HashMap<String, String>> sitesInfo;
-    private BlockingQueue<String> learnerQueue = null;
+public class Learner extends Thread {
+    private BlockingQueue<String> learnerQueue;
     private static ArrayList<Reservation> checkPointDictionary;
-    static ArrayList<Reservation> dictionary; // local reservation data structure
-    static TreeMap<Integer, Reservation> log; // array of reservation string(ops clientName 1 2 3), in stable storage
-    private Proposer proposer = null;
-    private DatagramSocket sendSocket;
-    public static Integer newMax;
+    // local reservation data structure
+    public static ArrayList<Reservation> dictionary;
+    // array of reservation string(ops clientName 1 2 3), in stable storage
+    public static TreeMap<Integer, Reservation> log;
+    private Proposer proposer;
+    static Integer newMax;
 
-    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer,ArrayList<HashMap<String, String>> sitesInfo, DatagramSocket sendSocket) throws IOException, ClassNotFoundException {
+    public Learner(BlockingQueue<String> learnerQueue, Proposer proposer,
+                   @NotNull ArrayList<HashMap<String, String>> sitesInfo,
+                   DatagramSocket sendSocket) throws IOException, ClassNotFoundException {
         this.learnerQueue = learnerQueue;
-        this.sitesInfo = sitesInfo;
         this.proposer = proposer;
-        this.sendSocket = sendSocket;
         checkPointDictionary = new ArrayList<>();
         dictionary = new ArrayList<>();
         log = new TreeMap<>();
         newMax = -1;
         File logFile = new File(Host.curSiteId + "log.txt");
-        File dictFile = new File(Host.curSiteId +"dictionary.txt");
+        File dictFile = new File(Host.curSiteId + "dictionary.txt");
         String askMax = "MaximumLog";
-        for (int i = 0; i < this.sitesInfo.size(); i++) {
-            String recvIp = this.sitesInfo.get(i).get("ip");
-            Send ask = new Send(recvIp, Integer.parseInt(this.sitesInfo.get(i).get("startPort")), this.sendSocket, askMax);
+        for (HashMap<String, String> stringStringHashMap : sitesInfo) {
+            String recvIp = stringStringHashMap.get("ip");
+            SendUtils ask = new SendUtils(recvIp, Integer.parseInt(stringStringHashMap.get("startPort")), sendSocket, askMax);
             ask.start();
         }
         if (dictFile.exists()) {
@@ -43,7 +51,7 @@ public class Learner extends Thread{
 
     public void run() {
         while (true) {
-            String curMsg = (String) this.learnerQueue.poll();
+            String curMsg = this.learnerQueue.poll();
             if (curMsg == null) continue;
 
             String[] splitted = curMsg.split(" ");
@@ -53,9 +61,6 @@ public class Learner extends Thread{
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else if (splitted[0].equals("Max")) {
-                //System.out.println("%%%%#####Recive ask max " + splitted[1]);
-//                this.newMax = Integer.parseInt(splitted[1]) > this.newMax ? Integer.parseInt(splitted[1]) : this.newMax;
             }
         }
     }
@@ -66,20 +71,18 @@ public class Learner extends Thread{
             if (log.containsKey(i)) {
                 Reservation compare = log.get(i);
                 if (newRecord.getOperation().equals("reserve") && compare.getOperation().equals("cancel") &&
-                newRecord.getClientName().equals(compare.getClientName())) return true;
+                        newRecord.getClientName().equals(compare.getClientName())) return true;
 
                 if (newRecord.getOperation().equals("cancel") && compare.getOperation().equals("reserve") &&
-                newRecord.getClientName().equals(compare.getClientName())) return true;
+                        newRecord.getClientName().equals(compare.getClientName())) return true;
             }
         }
         return false;
     }
 
-    // message form: commit accVal logSlot senderIP
-    public void recvCommit(String message) throws IOException {
+    private void recvCommit(@NotNull String message) throws IOException {
         // parse the received message
-        //"commit accNum accVal logSlot senderIP"
-        //
+        //message form: "commit accNum accVal logSlot senderIP"
         String[] splitted = message.split(" ");
         int msgLen = splitted.length;
         String accNum = splitted[1].trim();
@@ -88,19 +91,19 @@ public class Learner extends Thread{
         String clientName = splitted[3].trim();
         String sendIp = splitted[msgLen - 1].trim();
         ArrayList<Integer> flights = new ArrayList<>();
-        String accVal = operation + " " + clientName + " ";
+        StringBuilder accVal = new StringBuilder(operation + " " + clientName + " ");
         for (int i = 4; i < msgLen - 2; i++) {
-            accVal += splitted[i] + " ";
+            accVal.append(splitted[i]).append(" ");
             flights.add(Integer.parseInt(splitted[i]));
         }
         Reservation record = new Reservation(operation.trim(), clientName.trim(), flights);
         record.setProposerIp(Acceptor.proposerIp.get(Integer.parseInt(logSlot)));
         if (!Learner.log.containsKey(Integer.parseInt(logSlot))) {
-            record.setPrintString(accVal.trim());
-            if (record.getPrintString().isEmpty()) System.out.println("^^^^^Empty");
-            addLog(Integer.parseInt(logSlot), record, this.proposer);// update log
+            record.setPrintString(accVal.toString().trim());
+            if (record.getPrintString().isEmpty()) System.err.println("Empty");
+            // update log
+            addLog(Integer.parseInt(logSlot), record, this.proposer);
         }
-        //if (checkBack(record, Integer.parseInt(logSlot))) return;
         if (operation.equals("reserve")) {
             boolean add = true;
             for (int i = 0; i < Learner.dictionary.size(); i++) {
@@ -112,7 +115,7 @@ public class Learner extends Thread{
                 Learner.dictionary.add(record);
             }
         } else {
-            for (int i = 0; i < Learner.dictionary.size();) {
+            for (int i = 0; i < Learner.dictionary.size(); ) {
                 if (Learner.dictionary.get(i).getClientName().equals(clientName)) {
                     Learner.dictionary.remove(Learner.dictionary.get(i));
                 } else {
@@ -123,17 +126,17 @@ public class Learner extends Thread{
     }
 
 
-    public Integer findLastCheck() {
-        for(Map.Entry<Integer,Reservation> entry : Learner.log.descendingMap().entrySet()) {
+    private Integer findLastCheck() {
+        for (Map.Entry<Integer, Reservation> entry : Learner.log.descendingMap().entrySet()) {
             Reservation value = entry.getValue();
             if (value.isCheckPoint()) {
                 return entry.getKey();
             }
         }
-        return -1;// shouldn't be here
+        return -1;
     }
 
-    public void replay() {
+    private void replay() {
         if (Learner.log.isEmpty()) return;
         Integer startPoint = findLastCheck();
         Integer maxPoint = getMaxLogSlot();
@@ -151,8 +154,9 @@ public class Learner extends Thread{
                         Learner.dictionary.add(Learner.log.get(i));
                     }
 
-                } else {// cancel
-                    for (int j = 0; j < Learner.dictionary.size();) {
+                    // cancel
+                } else {
+                    for (int j = 0; j < Learner.dictionary.size(); ) {
                         if (Learner.dictionary.get(j).getClientName().equals(Learner.log.get(i).getClientName())) {
                             Learner.dictionary.remove(Learner.dictionary.get(j));
                         } else {
@@ -163,11 +167,12 @@ public class Learner extends Thread{
             }
         }
     }
-    
 
-    public static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) throws IOException {
+
+    private static void addLog(Integer logSlot, Reservation logRecord, Proposer proposer) throws IOException {
         Integer curMax = getMaxLogSlot();
-        if (curMax / 5 != logSlot / 5) {// learn hole
+        // learn hole
+        if (curMax / 5 != logSlot / 5) {
             Host.learnHole(proposer);
         }
         if (logSlot % 5 == 0) logRecord.setCheckPoint(true);
@@ -176,29 +181,30 @@ public class Learner extends Thread{
         if (logSlot % 5 == 0) storeDict();
     }
 
+    @Contract(pure = true)
     public static Integer getMaxLogSlot() {
-        Set<Integer> logSlot= Learner.log.keySet();
+        Set<Integer> logSlot = Learner.log.keySet();
         Integer maxLog = 0;
-        for (Integer num: logSlot) {
+        for (Integer num : logSlot) {
             if (num > maxLog) maxLog = num;
         }
         return maxLog;
     }
 
 
-    public static void storeLog() throws IOException {
-        byte[] output = Send.serialize(log);
+    private static void storeLog() throws IOException {
+        byte[] output = SendUtils.serialize(log);
         File file = new File(Host.curSiteId + "log.txt");
-        FileOutputStream fos = null;
+        FileOutputStream fos;
         fos = new FileOutputStream(file);
         fos.write(output);
         fos.close();
     }
 
-    public static void storeDict() throws IOException {
-        byte[] output = Send.serialize(checkPointDictionary);
-        File file = new File(Host.curSiteId +"dictionary.txt");
-        FileOutputStream fos = null;
+    private static void storeDict() throws IOException {
+        byte[] output = SendUtils.serialize(checkPointDictionary);
+        File file = new File(Host.curSiteId + "dictionary.txt");
+        FileOutputStream fos;
         fos = new FileOutputStream(file);
         fos.write(output);
         fos.close();
@@ -206,22 +212,18 @@ public class Learner extends Thread{
 
 
     private void recoverLog() throws IOException, ClassNotFoundException {
-        @SuppressWarnings (value="unchecked")
+        @SuppressWarnings(value = "unchecked")
         TreeMap<Integer, Reservation> recoverLog =
-                (TreeMap<Integer, Reservation>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"log.txt"));
+                (TreeMap<Integer, Reservation>) Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId + "log.txt"));
         Learner.log = recoverLog;
-        while (newMax == -1) {
-            continue;
-//            System.out.println("&&^$$$ new max is " + newMax);
-        }
         Host.learnBackHole(this.proposer, newMax);
         newMax = -1;
     }
 
     private void recoverDict() throws IOException, ClassNotFoundException {
-        @SuppressWarnings (value="unchecked")
+        @SuppressWarnings(value = "unchecked")
         ArrayList<Reservation> recoverDict =
-                (ArrayList<Reservation>)Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId +"dictionary.txt"));
+                (ArrayList<Reservation>) Acceptor.deserialize(Acceptor.readFromFile(Host.curSiteId + "dictionary.txt"));
         Learner.dictionary = recoverDict;
     }
 }

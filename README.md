@@ -1,33 +1,33 @@
-# Distributed-Flight-Reservation-System
+# Distributed-Flight-Messages.Reservation-System
 
 ## I. Project Description
 Implementing a distributed flight reservation service using the Paxos Algorithm to
 maintain a replicated log of “reserve” and “cancel” events.\
-The system consists of N sites. Each site plays the role of a Proposer, issuing proposals for “reserve”
-and “cancel” operations. It also plays the role of an Acceptor, helping to determine which proposal
+The system consists of N sites. Each site plays the role of a Roles.Proposer, issuing proposals for “reserve”
+and “cancel” operations. It also plays the role of an Roles.Acceptor, helping to determine which proposal
 should be accepted for each log position. \
-And, it plays the role of a Learner; it stores a replica of the log
-in stable storage and updates this log with committed log entries. The Learner can also store a data
+And, it plays the role of a Roles.Learner; it stores a replica of the log
+in stable storage and updates this log with committed log entries. The Roles.Learner can also store a data
 structure that contains the current reservations, but this data structure should not be stored in stable
 storage 
 
 ## II. File Structure
 A Paxos distributed flight reservation system by Java and it includes 7 files:
-##### Host.java: 
+##### App.Host.java: 
 > Implement the JSON input and user interface
 > Learn lost log values
 >Resolve Reserve/ Cancel conflicts
-##### Proposer.java:
-> Processing Proposer messages
+##### Roles.Proposer.java:
+> Processing Roles.Proposer messages
 > Implement the Synod Algorithm
-##### Acceptor.java:
+##### Roles.Acceptor.java:
 >Implement UDP receiving for 3 roles and connecting other 2 roles by blocking queue
->Processing Acceptor messages
-##### Learner.java
+>Processing Roles.Acceptor messages
+##### Roles.Learner.java
 >Continuously learn the incoming messages
-##### Send.java
-##### Record.java
-##### Reservation.java
+##### Utils.SendUtils.java
+##### Messages.Record.java
+##### Messages.Reservation.java
 
 
 ## III. Project Design
@@ -35,31 +35,31 @@ A Paxos distributed flight reservation system by Java and it includes 7 files:
 Paxos Algorithm ans Synod Algorithm
 
 ### Data structures:
-##### Proposer
+##### Roles.Proposer
 >Playing the role of proposer in the main thread
-##### Acceptor
->Playing the role of Acceptor and receive all messages for 3 roles in a child thread
-##### Learner
->Playing the role of Learner and recording messages in a child thread
-##### Send
+##### Roles.Acceptor
+>Playing the role of Roles.Acceptor and receive all messages for 3 roles in a child thread
+##### Roles.Learner
+>Playing the role of Roles.Learner and recording messages in a child thread
+##### Utils.SendUtils
 >Multithreaded UDP sender to ensure send the proposals concurrently
-##### Record
+##### Messages.Record
 > Utility class for recording the accepted log entry information
-##### Reservation
+##### Messages.Reservation
 > Utility class for storing reservation/canceling information
 
 
 ### Stable storage: 
 1. Log: Write to local txt files after everytime update
-2. Reservation data structures: Write to local txt files every 5 logs(Checkpoints)
+2. Messages.Reservation data structures: Write to local txt files every 5 logs(Checkpoints)
 
 ### Sockets and Threads: 
 Enable the multithreaded system to ensure the listening, sending and updating concurrently, 
 the communication between threads implemented by BlockingQueue:
-1. Main Thread: Proposer and UI 
-2. Acceptor: Keeping listening the incoming messages from other sites
-3. Send: Using UDP to send message concurrently
-4. Learner: Continuously recording the incoming message and updating log
+1. Main Thread: Roles.Proposer and UI 
+2. Roles.Acceptor: Keeping listening the incoming messages from other sites
+3. Utils.SendUtils: Using UDP to send message concurrently
+4. Roles.Learner: Continuously recording the incoming message and updating log
 
 ## IV. Implementation
 To be completed in the next few days
@@ -86,7 +86,7 @@ exit 0
 #!/bin/bash
 # Run my program.
 
-java -classpath .:json-simple-1.1.1.jar Host $1
+java -classpath .:json-simple-1.1.1.jar App.Host $1
 
 exit 0
 ```

@@ -1,3 +1,8 @@
+package Messages;
+
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 import java.lang.String;
 import java.util.ArrayList;
@@ -12,7 +17,8 @@ public class Reservation implements Serializable {
     private String printString;
 
     // CONSTRUCTOR
-    Reservation(String operation, String clientName, ArrayList<Integer> flights) {
+    @Contract(pure = true)
+    public Reservation(String operation, String clientName, ArrayList<Integer> flights) {
         this.operation = operation;
         this.clientName = clientName;
         this.flights = flights;
@@ -22,7 +28,7 @@ public class Reservation implements Serializable {
     }
 
     // accVal format: operation clientName flights
-    Reservation(String accVal) {
+    Reservation(@NotNull String accVal) {
         String[] splitted = accVal.split(" ");
         this.operation = splitted[0];
         this.clientName = splitted[1];
@@ -66,10 +72,6 @@ public class Reservation implements Serializable {
         return this.printString;
     }
 
-//    public String getProposerIp() {
-//        return this.proposerIp;
-//    }
-
     public String getOperation() {
         return this.operation;
     }
@@ -108,9 +110,3 @@ public class Reservation implements Serializable {
 }
 
 
-class CustomComparator implements Comparator<Reservation> {
-    @Override
-    public int compare(Reservation o1, Reservation o2) {
-        return o1.getClientName().compareTo(o2.getClientName());
-    }
-}
